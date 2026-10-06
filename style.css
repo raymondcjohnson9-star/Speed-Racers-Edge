@@ -1,0 +1,125 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+
+    font-family: Arial, sans-serif;
+
+    background:
+        linear-gradient(
+            rgba(5, 8, 20, 0.75),
+            rgba(5, 8, 20, 0.95)
+        ),
+        radial-gradient(
+            circle at center,
+            #263b70 0%,
+            #10182f 45%,
+            #050814 100%
+        );
+
+    color: white;
+}
+
+#game {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#main-menu {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    padding: 20px;
+
+    text-align: center;
+}
+
+#main-menu h1 {
+    font-size: clamp(32px, 9vw, 70px);
+    font-weight: 900;
+    letter-spacing: 4px;
+
+    margin-bottom: 10px;
+
+    text-shadow:
+        0 0 10px rgba(255, 255, 255, 0.4),
+        0 0 25px rgba(0, 150, 255, 0.7);
+}
+
+.subtitle {
+    font-size: 16px;
+    letter-spacing: 3px;
+
+    margin-bottom: 45px;
+
+    color: #b8c7e6;
+}
+
+button {
+    width: min(320px, 85vw);
+
+    margin: 7px 0;
+    padding: 15px 20px;
+
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+
+    background: rgba(15, 25, 55, 0.85);
+
+    color: white;
+
+    font-size: 17px;
+    font-weight: bold;
+
+    letter-spacing: 2px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+button:hover {
+    transform: scale(1.04);
+
+    background: rgba(25, 80, 150, 0.9);
+
+    box-shadow:
+        0 0 15px rgba(0, 150, 255, 0.5);
+}
+
+#playButton {
+    background: linear-gradient(
+        135deg,
+        #1769ff,
+        #00a8ff
+    );
+
+    border-color: #55c8ff;
+
+    box-shadow:
+        0 0 20px rgba(0, 150, 255, 0.45);
+}
+
+#playButton:hover {
+    background: linear-gradient(
+        135deg,
+        #2880ff,
+        #13c2ff
+    );
+  }
