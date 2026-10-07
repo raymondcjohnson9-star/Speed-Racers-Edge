@@ -1,17 +1,16 @@
 package com.speedracersedge.game
 
 import android.content.Context
-import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Paint
 import android.graphics.Typeface
-import android.net.Uri
 import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.VideoView
 
 class GameScreen(context: Context) : FrameLayout(context) {
 
@@ -24,716 +23,600 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
     private var currentScreen = Screen.LOADING
 
-    private val backgroundView = GameCanvasView(context)
-    private var videoView: VideoView? = null
+    private val backgroundColor =
+        Color.rgb(7, 12, 25)
 
-    private var screenWidth = 0
-    private var screenHeight = 0
-    private var loadingProgress = 0f
+    private var loadingProgress = 0
 
-    private val tapText = TextView(context)
+    private val progressBar =
+        ProgressBar(
+            context,
+            null,
+            android.R.attr.progressBarStyleHorizontal
+        )
+
+    private val loadingText =
+        TextView(context)
+
+    private val tapToStart =
+        TextView(context)
+
+    private var lobby3DView: Lobby3DView? = null
 
     init {
-        setWillNotDraw(false)
+        setBackgroundColor(backgroundColor)
 
-        addView(
-            backgroundView,
-            LayoutParams(
-                LayoutParams.MATCH_PARENT,
-                LayoutParams.MATCH_PARENT
+        showLoadingScreen()
+
+        postDelayed(
+            {
+                showTapToStart()
+            },
+            3000
+        )
+    }
+
+    // ---------------------------------------------------------
+    // LOADING SCREEN
+    // ---------------------------------------------------------
+
+    private fun showLoadingScreen() {
+
+        removeAllViews()
+
+        currentScreen = Screen.LOADING
+
+        val container =
+            LinearLayout(context)
+
+        container.orientation =
+            LinearLayout.VERTICAL
+
+        container.gravity =
+            Gravity.CENTER
+
+        container.setPadding(
+            40,
+            40,
+            40,
+            40
+        )
+
+        val title =
+            TextView(context)
+
+        title.text =
+            "SPEED RACERS EDGE"
+
+        title.setTextColor(Color.WHITE)
+
+        title.textSize = 30f
+
+        title.typeface =
+            Typeface.DEFAULT_BOLD
+
+        title.gravity =
+            Gravity.CENTER
+
+        container.addView(
+            title,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
             )
         )
 
-        setupLoadingVideo()
+        loadingText.text =
+            "INITIALIZING GAME..."
 
-        tapText.text = "TAP TO START"
-        tapText.setTextColor(Color.LTGRAY)
-        tapText.textSize = 13f
-        tapText.typeface = Typeface.DEFAULT_BOLD
-        tapText.gravity = Gravity.CENTER
-        tapText.visibility = View.GONE
-
-        val tapParams = LayoutParams(
-            LayoutParams.WRAP_CONTENT,
-            55
+        loadingText.setTextColor(
+            Color.LTGRAY
         )
 
-        tapParams.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-        tapParams.bottomMargin = 12
+        loadingText.textSize = 15f
 
-        addView(tapText, tapParams)
+        loadingText.gravity =
+            Gravity.CENTER
 
-        postDelayed({
-            finishLoading()
-        }, 3000)
+        val textParams =
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
 
-        postInvalidateDelayed(30)
-    }
+        textParams.topMargin = 30
 
-    private fun setupLoadingVideo() {
-
-        val resourceId = resources.getIdentifier(
-            "loading_chase",
-            "raw",
-            context.packageName
+        container.addView(
+            loadingText,
+            textParams
         )
 
-        if (resourceId == 0) {
-            return
-        }
+        progressBar.max = 100
 
-        val video = VideoView(context)
+        progressBar.progress = 0
 
-        val videoParams = LayoutParams(
-            LayoutParams.MATCH_PARENT,
-            LayoutParams.MATCH_PARENT
+        val progressParams =
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                12
+            )
+
+        progressParams.topMargin = 20
+
+        container.addView(
+            progressBar,
+            progressParams
         )
 
-        video.layoutParams = videoParams
-
-        addView(video, 0)
-
-        videoView = video
-
-        val videoUri = Uri.parse(
-            "android.resource://${context.packageName}/$resourceId"
+        addView(
+            container,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+            )
         )
 
-        video.setVideoURI(videoUri)
-
-        video.setOnPreparedListener { mediaPlayer ->
-            mediaPlayer.isLooping = true
-            video.start()
-        }
-
-        video.setOnErrorListener { _, _, _ ->
-            video.visibility = View.GONE
-            true
-        }
+        animateLoading()
     }
 
-    private fun finishLoading() {
+    private fun animateLoading() {
 
-        if (currentScreen != Screen.LOADING) {
-            return
-        }
+        loadingProgress = 0
 
-        currentScreen = Screen.TAP_TO_START
+        val runnable =
+            object : Runnable {
 
-        videoView?.stopPlayback()
-        videoView?.visibility = View.GONE
+                override fun run() {
 
-        tapText.visibility = View.VISIBLE
+                    if (currentScreen != Screen.LOADING) {
+                        return
+                    }
 
-        backgroundView.invalidate()
-    }
+                    loadingProgress += 2
 
-    private fun startGame() {
+                    progressBar.progress =
+                        loadingProgress
 
-        currentScreen = Screen.LOBBY
+                    if (loadingProgress < 100) {
 
-        tapText.visibility = View.GONE
-
-        backgroundView.invalidate()
-    }
-
-    private fun openModeMenu() {
-
-        currentScreen = Screen.MODE_MENU
-
-        tapText.visibility = View.GONE
-
-        backgroundView.invalidate()
-    }
-
-    private fun closeModeMenu() {
-
-        currentScreen = Screen.LOBBY
-
-        backgroundView.invalidate()
-    }
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-
-        if (event.action != MotionEvent.ACTION_UP) {
-            return true
-        }
-
-        val x = event.x
-        val y = event.y
-
-        when (currentScreen) {
-
-            Screen.LOADING -> {
-                // Loading cannot be skipped.
-            }
-
-            Screen.TAP_TO_START -> {
-                startGame()
-            }
-
-            Screen.LOBBY -> {
-
-                val modeLeft = screenWidth / 2f - 120f
-                val modeTop = 190f
-                val modeRight = screenWidth / 2f + 120f
-                val modeBottom = 245f
-
-                if (
-                    x >= modeLeft &&
-                    x <= modeRight &&
-                    y >= modeTop &&
-                    y <= modeBottom
-                ) {
-                    openModeMenu()
-                }
-            }
-
-            Screen.MODE_MENU -> {
-
-                val menuWidth = 360f
-                val menuHeight = 430f
-
-                val menuLeft = screenWidth / 2f - menuWidth / 2f
-                val menuTop = screenHeight / 2f - menuHeight / 2f
-                val menuRight = screenWidth / 2f + menuWidth / 2f
-                val menuBottom = screenHeight / 2f + menuHeight / 2f
-
-                if (
-                    x < menuLeft ||
-                    x > menuRight ||
-                    y < menuTop ||
-                    y > menuBottom
-                ) {
-                    closeModeMenu()
-                    return true
-                }
-
-                // Close button
-                val closeTop = menuBottom - 65f
-
-                if (y >= closeTop && y <= menuBottom) {
-                    closeModeMenu()
-                    return true
-                }
-
-                // Mode selections
-                val firstModeTop = menuTop + 75f
-                val modeHeight = 50f
-                val modeGap = 10f
-
-                for (i in 0 until 5) {
-
-                    val itemTop =
-                        firstModeTop + i * (modeHeight + modeGap)
-
-                    val itemBottom =
-                        itemTop + modeHeight
-
-                    if (
-                        x >= menuLeft + 30f &&
-                        x <= menuRight - 30f &&
-                        y >= itemTop &&
-                        y <= itemBottom
-                    ) {
-
-                        when (i) {
-
-                            0 -> {
-                                // Quick Race
-                                closeModeMenu()
-                            }
-
-                            1 -> {
-                                // Online Race
-                                closeModeMenu()
-                            }
-
-                            2 -> {
-                                // Heist
-                                closeModeMenu()
-                            }
-
-                            3 -> {
-                                // Private Lobby
-                                closeModeMenu()
-                            }
-
-                            4 -> {
-                                // Special Events
-                                closeModeMenu()
-                            }
-                        }
-
-                        return true
+                        postDelayed(
+                            this,
+                            60
+                        )
                     }
                 }
             }
-        }
 
-        return true
+        post(runnable)
     }
 
-    private inner class GameCanvasView(context: Context) : View(context) {
+    // ---------------------------------------------------------
+    // TAP TO START
+    // ---------------------------------------------------------
 
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private fun showTapToStart() {
 
-        override fun onDraw(canvas: Canvas) {
-            super.onDraw(canvas)
+        removeAllViews()
 
-            screenWidth = width
-            screenHeight = height
+        currentScreen =
+            Screen.TAP_TO_START
 
-            when (currentScreen) {
+        val container =
+            FrameLayout(context)
 
-                Screen.LOADING -> {
-                    drawLoadingScreen(canvas)
-                }
+        val title =
+            TextView(context)
 
-                Screen.TAP_TO_START -> {
-                    drawTapToStart(canvas)
-                }
+        title.text =
+            "SPEED RACERS EDGE"
 
-                Screen.LOBBY -> {
-                    drawLobby(canvas)
-                }
+        title.textSize = 34f
 
-                Screen.MODE_MENU -> {
-                    drawLobby(canvas)
-                    drawModeMenu(canvas)
-                }
-            }
+        title.setTextColor(
+            Color.WHITE
+        )
+
+        title.typeface =
+            Typeface.DEFAULT_BOLD
+
+        title.gravity =
+            Gravity.CENTER
+
+        container.addView(
+            title,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+            )
+        )
+
+        tapToStart.text =
+            "TAP TO START"
+
+        tapToStart.textSize = 18f
+
+        tapToStart.setTextColor(
+            Color.WHITE
+        )
+
+        tapToStart.gravity =
+            Gravity.CENTER
+
+        tapToStart.setPadding(
+            30,
+            20,
+            30,
+            20
+        )
+
+        tapToStart.setOnClickListener {
+            showLobby()
         }
 
-        private fun drawLoadingScreen(canvas: Canvas) {
-
-            canvas.drawColor(
-                Color.argb(
-                    105,
-                    0,
-                    0,
-                    0
-                )
+        val tapParams =
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM
             )
 
-            paint.textAlign = Paint.Align.CENTER
-            paint.typeface = Typeface.DEFAULT_BOLD
-            paint.textSize = 42f
-            paint.color = Color.WHITE
+        tapParams.bottomMargin = 45
 
-            canvas.drawText(
-                "SPEED RACERS EDGE",
-                screenWidth / 2f,
-                screenHeight * 0.43f,
-                paint
+        container.addView(
+            tapToStart,
+            tapParams
+        )
+
+        addView(
+            container,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+    }
+
+    // ---------------------------------------------------------
+    // PLAYER LOBBY
+    // ---------------------------------------------------------
+
+    private fun showLobby() {
+
+        removeAllViews()
+
+        currentScreen =
+            Screen.LOBBY
+
+        setBackgroundColor(
+            Color.rgb(5, 9, 18)
+        )
+
+        // -----------------------------------------------------
+        // 3D CENTER
+        // -----------------------------------------------------
+
+        lobby3DView =
+            Lobby3DView(context)
+
+        val viewerParams =
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
             )
 
-            paint.typeface = Typeface.DEFAULT
-            paint.textSize = 17f
-            paint.color = Color.LTGRAY
+        viewerParams.leftMargin = 180
+        viewerParams.rightMargin = 230
+        viewerParams.topMargin = 90
+        viewerParams.bottomMargin = 80
 
-            canvas.drawText(
-                "LOADING",
-                screenWidth / 2f,
-                screenHeight * 0.52f,
-                paint
+        addView(
+            lobby3DView,
+            viewerParams
+        )
+
+        // -----------------------------------------------------
+        // TOP LEFT
+        // -----------------------------------------------------
+
+        val profile =
+            createButton(
+                "👤 PROFILE"
             )
 
-            val barWidth = screenWidth * 0.35f
-            val barHeight = 5f
+        val profileParams =
+            FrameLayout.LayoutParams(
+                150,
+                60,
+                Gravity.TOP or Gravity.START
+            )
 
-            val left = screenWidth / 2f - barWidth / 2f
-            val top = screenHeight * 0.57f
+        profileParams.leftMargin = 20
+        profileParams.topMargin = 15
 
-            paint.color = Color.argb(
+        addView(
+            profile,
+            profileParams
+        )
+
+        val coins =
+            createText(
+                "🪙 12,450"
+            )
+
+        coins.textSize = 17f
+
+        val coinsParams =
+            FrameLayout.LayoutParams(
+                150,
+                60,
+                Gravity.TOP or Gravity.START
+            )
+
+        coinsParams.leftMargin = 175
+        coinsParams.topMargin = 15
+
+        addView(
+            coins,
+            coinsParams
+        )
+
+        // -----------------------------------------------------
+        // TOP RIGHT
+        // -----------------------------------------------------
+
+        val gems =
+            createText(
+                "💎 320"
+            )
+
+        gems.textSize = 17f
+
+        val gemsParams =
+            FrameLayout.LayoutParams(
+                130,
+                60,
+                Gravity.TOP or Gravity.END
+            )
+
+        gemsParams.rightMargin = 80
+        gemsParams.topMargin = 15
+
+        addView(
+            gems,
+            gemsParams
+        )
+
+        val settings =
+            createButton(
+                "⚙"
+            )
+
+        settings.textSize = 22f
+
+        val settingsParams =
+            FrameLayout.LayoutParams(
+                60,
+                60,
+                Gravity.TOP or Gravity.END
+            )
+
+        settingsParams.rightMargin = 15
+        settingsParams.topMargin = 15
+
+        addView(
+            settings,
+            settingsParams
+        )
+
+        // -----------------------------------------------------
+        // LOBBY TITLE
+        // -----------------------------------------------------
+
+        val lobbyTitle =
+            createText(
+                "PLAYER LOBBY"
+            )
+
+        lobbyTitle.textSize = 23f
+
+        lobbyTitle.typeface =
+            Typeface.DEFAULT_BOLD
+
+        lobbyTitle.gravity =
+            Gravity.CENTER
+
+        val titleParams =
+            FrameLayout.LayoutParams(
+                300,
+                60,
+                Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            )
+
+        titleParams.topMargin = 20
+
+        addView(
+            lobbyTitle,
+            titleParams
+        )
+
+        // -----------------------------------------------------
+        // SHOP
+        // -----------------------------------------------------
+
+        val shop =
+            createButton(
+                "🛒 SHOP"
+            )
+
+        val shopParams =
+            FrameLayout.LayoutParams(
+                150,
+                65,
+                Gravity.BOTTOM or Gravity.START
+            )
+
+        shopParams.leftMargin = 20
+        shopParams.bottomMargin = 20
+
+        addView(
+            shop,
+            shopParams
+        )
+
+        // -----------------------------------------------------
+        // FRIENDS
+        // -----------------------------------------------------
+
+        val friendsTitle =
+            createText(
+                "FRIENDS"
+            )
+
+        friendsTitle.textSize = 18f
+
+        friendsTitle.typeface =
+            Typeface.DEFAULT_BOLD
+
+        friendsTitle.gravity =
+            Gravity.CENTER
+
+        val friendsTitleParams =
+            FrameLayout.LayoutParams(
                 190,
-                45,
-                45,
-                55
+                50,
+                Gravity.TOP or Gravity.END
             )
 
-            canvas.drawRoundRect(
-                left,
-                top,
-                left + barWidth,
-                top + barHeight,
-                5f,
-                5f,
-                paint
+        friendsTitleParams.rightMargin = 20
+        friendsTitleParams.topMargin = 100
+
+        addView(
+            friendsTitle,
+            friendsTitleParams
+        )
+
+        val friends =
+            createText(
+                "🟢 Alex\n\n" +
+                    "🟢 Mike\n\n" +
+                    "⚪ John"
             )
 
-            loadingProgress += 0.01f
+        friends.textSize = 16f
 
-            if (loadingProgress > 1f) {
-                loadingProgress = 1f
-            }
+        friends.gravity =
+            Gravity.CENTER_VERTICAL
 
-            paint.color = Color.WHITE
+        friends.setPadding(
+            15,
+            10,
+            10,
+            10
+        )
 
-            canvas.drawRoundRect(
-                left,
-                top,
-                left + barWidth * loadingProgress,
-                top + barHeight,
-                5f,
-                5f,
-                paint
-            )
-
-            postInvalidateDelayed(30)
-        }
-
-        private fun drawTapToStart(canvas: Canvas) {
-
-            canvas.drawColor(
-                Color.rgb(
-                    5,
-                    8,
-                    15
-                )
-            )
-
-            paint.textAlign = Paint.Align.CENTER
-            paint.typeface = Typeface.DEFAULT_BOLD
-            paint.textSize = 42f
-            paint.color = Color.WHITE
-
-            canvas.drawText(
-                "SPEED RACERS EDGE",
-                screenWidth / 2f,
-                screenHeight * 0.42f,
-                paint
-            )
-        }
-
-        private fun drawLobby(canvas: Canvas) {
-
-            canvas.drawColor(
-                Color.rgb(
-                    7,
-                    12,
-                    20
-                )
-            )
-
-            // PROFILE
-
-            paint.color = Color.rgb(
-                25,
-                30,
-                40
-            )
-
-            canvas.drawRoundRect(
-                20f,
-                18f,
-                165f,
-                68f,
-                12f,
-                12f,
-                paint
-            )
-
-            paint.color = Color.WHITE
-            paint.textAlign = Paint.Align.LEFT
-            paint.textSize = 16f
-            paint.typeface = Typeface.DEFAULT_BOLD
-
-            canvas.drawText(
-                "PROFILE",
-                38f,
-                49f,
-                paint
-            )
-
-            // RACE COINS
-
-            paint.color = Color.rgb(
-                25,
-                30,
-                40
-            )
-
-            canvas.drawRoundRect(
-                175f,
-                18f,
-                310f,
-                68f,
-                12f,
-                12f,
-                paint
-            )
-
-            paint.color = Color.WHITE
-            paint.textSize = 15f
-
-            canvas.drawText(
-                "COINS 12,450",
-                190f,
-                49f,
-                paint
-            )
-
-            // GEMS
-
-            paint.color = Color.rgb(
-                25,
-                30,
-                40
-            )
-
-            canvas.drawRoundRect(
-                screenWidth - 155f,
-                18f,
-                screenWidth - 20f,
-                68f,
-                12f,
-                12f,
-                paint
-            )
-
-            paint.color = Color.WHITE
-
-            canvas.drawText(
-                "GEMS 320",
-                screenWidth - 140f,
-                49f,
-                paint
-            )
-
-            // PLAYER LOBBY
-
-            paint.textAlign = Paint.Align.CENTER
-            paint.textSize = 30f
-            paint.typeface = Typeface.DEFAULT_BOLD
-
-            canvas.drawText(
-                "PLAYER LOBBY",
-                screenWidth / 2f,
-                145f,
-                paint
-            )
-
-            // SELECT MODE
-
-            val modeLeft = screenWidth / 2f - 120f
-            val modeTop = 190f
-            val modeRight = screenWidth / 2f + 120f
-            val modeBottom = 245f
-
-            paint.color = Color.rgb(
-                35,
-                85,
-                170
-            )
-
-            canvas.drawRoundRect(
-                modeLeft,
-                modeTop,
-                modeRight,
-                modeBottom,
-                14f,
-                14f,
-                paint
-            )
-
-            paint.color = Color.WHITE
-            paint.textSize = 18f
-
-            canvas.drawText(
-                "SELECT MODE",
-                screenWidth / 2f,
-                224f,
-                paint
-            )
-
-            // QUICK RACE
-
-            paint.color = Color.rgb(
-                25,
-                30,
-                40
-            )
-
-            canvas.drawRoundRect(
-                screenWidth / 2f - 105f,
-                265f,
-                screenWidth / 2f + 105f,
-                315f,
-                12f,
-                12f,
-                paint
-            )
-
-            paint.color = Color.WHITE
-            paint.textSize = 16f
-
-            canvas.drawText(
-                "QUICK RACE",
-                screenWidth / 2f,
-                297f,
-                paint
-            )
-
-            // SHOP
-
-            paint.color = Color.rgb(
-                25,
-                30,
-                40
-            )
-
-            canvas.drawRoundRect(
-                20f,
-                screenHeight - 80f,
-                135f,
-                screenHeight - 25f,
-                12f,
-                12f,
-                paint
-            )
-
-            paint.color = Color.WHITE
-            paint.textAlign = Paint.Align.CENTER
-            paint.textSize = 15f
-
-            canvas.drawText(
-                "SHOP",
-                77f,
-                screenHeight - 47f,
-                paint
-            )
-
-            // FRIENDS
-
-            val friendsLeft = screenWidth - 225f
-
-            paint.color = Color.rgb(
-                18,
-                23,
-                32
-            )
-
-            canvas.drawRoundRect(
-                friendsLeft,
-                105f,
-                screenWidth - 20f,
-                screenHeight - 25f,
-                14f,
-                14f,
-                paint
-            )
-
-            paint.color = Color.WHITE
-            paint.textSize = 18f
-            paint.typeface = Typeface.DEFAULT_BOLD
-
-            canvas.drawText(
-                "FRIENDS",
-                friendsLeft + 100f,
-                135f,
-                paint
-            )
-
-            paint.typeface = Typeface.DEFAULT
-            paint.textSize = 14f
-
-            canvas.drawText(
-                "ONLINE  •  Alex",
-                friendsLeft + 100f,
-                175f,
-                paint
-            )
-
-            canvas.drawText(
-                "ONLINE  •  Mike",
-                friendsLeft + 100f,
-                210f,
-                paint
-            )
-
-            canvas.drawText(
-                "ONLINE  •  Chris",
-                friendsLeft + 100f,
-                245f,
-                paint
-            )
-
-            canvas.drawText(
-                "OFFLINE •  John",
-                friendsLeft + 100f,
-                280f,
-                paint
-            )
-        }
-
-        private fun drawModeMenu(canvas: Canvas) {
-
-            // Darken the lobby behind the menu.
-
-            paint.color = Color.argb(
+        val friendsParams =
+            FrameLayout.LayoutParams(
                 190,
-                0,
-                0,
-                0
+                220,
+                Gravity.TOP or Gravity.END
             )
 
-            canvas.drawRect(
-                0f,
-                0f,
-                screenWidth.toFloat(),
-                screenHeight.toFloat(),
-                paint
+        friendsParams.rightMargin = 20
+        friendsParams.topMargin = 150
+
+        addView(
+            friends,
+            friendsParams
+        )
+
+        // -----------------------------------------------------
+        // SELECT MODE
+        // -----------------------------------------------------
+
+        val selectMode =
+            createButton(
+                "SELECT MODE"
             )
 
-            val menuWidth = 360f
-            val menuHeight = 430f
+        selectMode.setOnClickListener {
+            showModeMenu()
+        }
 
-            val menuLeft =
-                screenWidth / 2f - menuWidth / 2f
-
-            val menuTop =
-                screenHeight / 2f - menuHeight / 2f
-
-            val menuRight =
-                screenWidth / 2f + menuWidth / 2f
-
-            val menuBottom =
-                screenHeight / 2f + menuHeight / 2f
-
-            // Menu background
-
-            paint.color = Color.rgb(
-                15,
-                20,
-                30
+        val modeParams =
+            FrameLayout.LayoutParams(
+                190,
+                65,
+                Gravity.BOTTOM or Gravity.END
             )
 
-            canvas.drawRoundRect(
-                menuLeft,
-                menuTop,
-                menuRight,
-                menuBottom,
-                20f,
-                20f,
-                paint
+        modeParams.rightMargin = 20
+        modeParams.bottomMargin = 20
+
+        addView(
+            selectMode,
+            modeParams
+        )
+    }
+
+    // ---------------------------------------------------------
+    // MODE MENU
+    // ---------------------------------------------------------
+
+    private fun showModeMenu() {
+
+        currentScreen =
+            Screen.MODE_MENU
+
+        val overlay =
+            LinearLayout(context)
+
+        overlay.orientation =
+            LinearLayout.VERTICAL
+
+        overlay.gravity =
+            Gravity.CENTER
+
+        overlay.setPadding(
+            30,
+            30,
+            30,
+            30
+        )
+
+        overlay.setBackgroundColor(
+            Color.argb(
+                235,
+                5,
+                9,
+                18
+            )
+        )
+
+        val title =
+            createText(
+                "SELECT MODE"
             )
 
-            // Title
+        title.textSize = 26f
 
-            paint.color = Color.WHITE
-            paint.textAlign = Paint.Align.CENTER
-            paint.typeface = Typeface.DEFAULT_BOLD
-            paint.textSize = 23f
+        title.typeface =
+            Typeface.DEFAULT_BOLD
 
-            canvas.drawText(
-                "SELECT MODE",
-                screenWidth / 2f,
-                menuTop + 48f,
-                paint
+        title.gravity =
+            Gravity.CENTER
+
+        overlay.addView(
+            title,
+            LinearLayout.LayoutParams(
+                350,
+                70
             )
+        )
 
-            val modes = arrayOf(
+        val modes =
+            arrayOf(
                 "QUICK RACE",
                 "ONLINE RACE",
                 "HEIST",
@@ -741,64 +624,125 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 "SPECIAL EVENTS"
             )
 
-            val modeHeight = 50f
-            val modeGap = 10f
-            val firstModeTop = menuTop + 75f
+        for (mode in modes) {
 
-            for (i in modes.indices) {
+            val button =
+                createButton(mode)
 
-                val itemTop =
-                    firstModeTop +
-                            i * (modeHeight + modeGap)
+            button.setOnClickListener {
 
-                val itemBottom =
-                    itemTop + modeHeight
+                removeView(overlay)
 
-                paint.color = Color.rgb(
-                    27,
-                    35,
-                    48
-                )
-
-                canvas.drawRoundRect(
-                    menuLeft + 30f,
-                    itemTop,
-                    menuRight - 30f,
-                    itemBottom,
-                    10f,
-                    10f,
-                    paint
-                )
-
-                paint.color = Color.WHITE
-                paint.textSize = 15f
-                paint.typeface = Typeface.DEFAULT_BOLD
-
-                canvas.drawText(
-                    modes[i],
-                    screenWidth / 2f,
-                    itemTop + 31f,
-                    paint
-                )
+                currentScreen =
+                    Screen.LOBBY
             }
 
-            // CLOSE
+            val params =
+                LinearLayout.LayoutParams(
+                    350,
+                    55
+                )
 
-            paint.color = Color.rgb(
-                100,
-                105,
-                115
-            )
+            params.topMargin = 8
 
-            paint.textSize = 14f
-            paint.typeface = Typeface.DEFAULT
-
-            canvas.drawText(
-                "CLOSE",
-                screenWidth / 2f,
-                menuBottom - 28f,
-                paint
+            overlay.addView(
+                button,
+                params
             )
         }
+
+        val close =
+            createButton(
+                "CLOSE"
+            )
+
+        close.setOnClickListener {
+
+            removeView(overlay)
+
+            currentScreen =
+                Screen.LOBBY
+        }
+
+        val closeParams =
+            LinearLayout.LayoutParams(
+                350,
+                55
+            )
+
+        closeParams.topMargin = 20
+
+        overlay.addView(
+            close,
+            closeParams
+        )
+
+        addView(
+            overlay,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+    }
+
+    // ---------------------------------------------------------
+    // UI HELPERS
+    // ---------------------------------------------------------
+
+    private fun createText(
+        textValue: String
+    ): TextView {
+
+        return TextView(context).apply {
+
+            text = textValue
+
+            setTextColor(
+                Color.WHITE
+            )
+
+            gravity =
+                Gravity.CENTER
+
+            setBackgroundColor(
+                Color.TRANSPARENT
+            )
+        }
+    }
+
+    private fun createButton(
+        textValue: String
+    ): Button {
+
+        return Button(context).apply {
+
+            text = textValue
+
+            setTextColor(
+                Color.WHITE
+            )
+
+            textSize = 14f
+
+            isAllCaps = false
+
+            setBackgroundColor(
+                Color.rgb(
+                    25,
+                    32,
+                    50
+                )
+            )
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+
+        lobby3DView?.destroy()
+
+        lobby3DView = null
+
+        super.onDetachedFromWindow()
     }
 }
