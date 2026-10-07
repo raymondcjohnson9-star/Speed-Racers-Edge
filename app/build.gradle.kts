@@ -36,8 +36,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
 
-    // Google Filament 3D rendering engine
-    implementation("com.google.android.filament:filament-android:1.77.2")
-    implementation("com.google.android.filament:gltfio-android:1.77.2")
-    implementation("com.google.android.filament:filament-utils-android:1.77.2")
+    // Google Filament 3D engine
+    implementation("com.google.android.filament:filament-android:1.77.1")
+    implementation("com.google.android.filament:gltfio-android:1.77.1")
 }
