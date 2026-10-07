@@ -17,14 +17,24 @@ import com.google.android.filament.android.UiHelper
 
 class Lobby3DView(context: Context) : SurfaceView(context) {
 
-    private var engine: Engine? = null
-    private var renderer: Renderer? = null
-    private var scene: Scene? = null
-    private var camera: Camera? = null
-    private var filamentView: View? = null
-    private var swapChain: SwapChain? = null
+    private val engine: Engine = Engine.create()
 
-    private var cameraEntity: Int = 0
+    private val renderer: Renderer =
+        engine.createRenderer()
+
+    private val scene: Scene =
+        engine.createScene()
+
+    private val cameraEntity: Int =
+        EntityManager.get().create()
+
+    private val camera: Camera =
+        engine.createCamera(cameraEntity)
+
+    private val filamentView: View =
+        engine.createView()
+
+    private var swapChain: SwapChain? = null
 
     private val uiHelper =
         UiHelper(
@@ -32,6 +42,7 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
         )
 
     private var previousX = 0f
+
     private var rotation = 0f
 
     private var isDestroyed = false
@@ -39,7 +50,9 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
     private val frameCallback =
         object : Choreographer.FrameCallback {
 
-            override fun doFrame(frameTimeNanos: Long) {
+            override fun doFrame(
+                frameTimeNanos: Long
+            ) {
 
                 if (isDestroyed) {
                     return
@@ -47,15 +60,45 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
 
                 renderFrame()
 
-                Choreographer
-                    .getInstance()
-                    .postFrameCallback(this)
+                if (!isDestroyed) {
+                    Choreographer
+                        .getInstance()
+                        .postFrameCallback(this)
+                }
             }
         }
 
     init {
 
         isFocusable = true
+
+        filamentView.scene = scene
+        filamentView.camera = camera
+
+        filamentView.blendMode =
+            View.BlendMode.OPAQUE
+
+        camera.setProjection(
+            45.0,
+            1.0,
+            0.1,
+            100.0,
+            Camera.Fov.VERTICAL
+        )
+
+        camera.lookAt(
+            0.0,
+            2.0,
+            7.0,
+
+            0.0,
+            1.0,
+            0.0,
+
+            0.0,
+            1.0,
+            0.0
+        )
 
         uiHelper.renderCallback =
             object : UiHelper.RendererCallback {
@@ -68,15 +111,12 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                         return
                     }
 
-                    val currentEngine =
-                        engine ?: return
-
                     swapChain?.let {
-                        currentEngine.destroySwapChain(it)
+                        engine.destroySwapChain(it)
                     }
 
                     swapChain =
-                        currentEngine.createSwapChain(surface)
+                        engine.createSwapChain(surface)
 
                     startRendering()
                 }
@@ -85,11 +125,8 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
 
                     stopRendering()
 
-                    val currentEngine =
-                        engine ?: return
-
                     swapChain?.let {
-                        currentEngine.destroySwapChain(it)
+                        engine.destroySwapChain(it)
                     }
 
                     swapChain = null
@@ -104,9 +141,10 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                         return
                     }
 
-                    camera?.setProjection(
+                    camera.setProjection(
                         45.0,
-                        width.toDouble() / height.toDouble(),
+                        width.toDouble() /
+                            height.toDouble(),
                         0.1,
                         100.0,
                         Camera.Fov.VERTICAL
@@ -114,114 +152,7 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                 }
             }
 
-        try {
-
-            initializeFilament()
-
-            uiHelper.attachTo(this)
-
-        } catch (exception: Exception) {
-
-            exception.printStackTrace()
-
-            cleanupFilament()
-        }
-    }
-
-    private fun initializeFilament() {
-
-        if (isDestroyed) {
-            return
-        }
-
-        val newEngine =
-            Engine.create()
-
-        engine = newEngine
-
-        renderer =
-            newEngine.createRenderer()
-
-        scene =
-            newEngine.createScene()
-
-        cameraEntity =
-            EntityManager
-                .get()
-                .create()
-
-        camera =
-            newEngine.createCamera(cameraEntity)
-
-        filamentView =
-            newEngine.createView()
-
-        filamentView?.scene = scene
-
-        filamentView?.camera = camera
-
-        filamentView?.blendMode =
-            View.BlendMode.OPAQUE
-
-        camera?.setProjection(
-            45.0,
-            1.0,
-            0.1,
-            100.0,
-            Camera.Fov.VERTICAL
-        )
-
-        camera?.lookAt(
-            0.0,
-            2.0,
-            7.0,
-
-            0.0,
-            1.0,
-            0.0,
-
-            0.0,
-            1.0,
-            0.0
-        )
-    }
-
-    private fun renderFrame() {
-
-        if (isDestroyed) {
-            return
-        }
-
-        val currentRenderer =
-            renderer ?: return
-
-        val currentSwapChain =
-            swapChain ?: return
-
-        val currentView =
-            filamentView ?: return
-
-        try {
-
-            if (currentRenderer.beginFrame(
-                    currentSwapChain
-                )
-            ) {
-
-                currentRenderer.render(
-                    currentView,
-                    0
-                )
-
-                currentRenderer.endFrame()
-            }
-
-        } catch (exception: Exception) {
-
-            exception.printStackTrace()
-
-            stopRendering()
-        }
+        uiHelper.attachTo(this)
     }
 
     private fun startRendering() {
@@ -250,6 +181,37 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
             .removeFrameCallback(
                 frameCallback
             )
+    }
+
+    private fun renderFrame() {
+
+        if (isDestroyed) {
+            return
+        }
+
+        val currentSwapChain =
+            swapChain ?: return
+
+        try {
+
+            if (renderer.beginFrame(
+                    currentSwapChain
+                )
+            ) {
+
+                renderer.render(
+                    filamentView
+                )
+
+                renderer.endFrame()
+            }
+
+        } catch (exception: Exception) {
+
+            exception.printStackTrace()
+
+            stopRendering()
+        }
     }
 
     override fun onTouchEvent(
@@ -312,78 +274,21 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
 
         uiHelper.detach()
 
-        cleanupFilament()
-    }
-
-    private fun cleanupFilament() {
-
-        val currentEngine =
-            engine ?: return
-
         swapChain?.let {
 
-            try {
-                currentEngine.destroySwapChain(it)
-            } catch (exception: Exception) {
-                exception.printStackTrace()
-            }
+            engine.destroySwapChain(it)
 
             swapChain = null
         }
 
-        filamentView?.let {
+        engine.destroyRenderer(renderer)
 
-            try {
-                currentEngine.destroyView(it)
-            } catch (exception: Exception) {
-                exception.printStackTrace()
-            }
+        engine.destroyView(filamentView)
 
-            filamentView = null
-        }
+        engine.destroyScene(scene)
 
-        scene?.let {
+        engine.destroyEntity(cameraEntity)
 
-            try {
-                currentEngine.destroyScene(it)
-            } catch (exception: Exception) {
-                exception.printStackTrace()
-            }
-
-            scene = null
-        }
-
-        if (cameraEntity != 0) {
-
-            try {
-                currentEngine.destroyEntity(
-                    cameraEntity
-                )
-            } catch (exception: Exception) {
-                exception.printStackTrace()
-            }
-
-            cameraEntity = 0
-        }
-
-        renderer?.let {
-
-            try {
-                currentEngine.destroyRenderer(it)
-            } catch (exception: Exception) {
-                exception.printStackTrace()
-            }
-
-            renderer = null
-        }
-
-        try {
-            currentEngine.destroy()
-        } catch (exception: Exception) {
-            exception.printStackTrace()
-        }
-
-        engine = null
-        camera = null
+        engine.destroy()
     }
 }
