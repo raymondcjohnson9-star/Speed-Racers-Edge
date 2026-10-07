@@ -18,7 +18,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
     private enum class Screen {
         LOADING,
         TAP_TO_START,
-        LOBBY
+        LOBBY,
+        MODE_MENU
     }
 
     private var currentScreen = Screen.LOADING
@@ -28,7 +29,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
     private var screenWidth = 0
     private var screenHeight = 0
-
     private var loadingProgress = 0f
 
     private val tapText = TextView(context)
@@ -36,7 +36,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
     init {
         setWillNotDraw(false)
 
-        // Canvas UI
         addView(
             backgroundView,
             LayoutParams(
@@ -45,11 +44,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
         )
 
-        // Look for the future loading video.
-        // The app still works normally if the video has not been added yet.
         setupLoadingVideo()
 
-        // Small TAP TO START text
         tapText.text = "TAP TO START"
         tapText.setTextColor(Color.LTGRAY)
         tapText.textSize = 13f
@@ -67,7 +63,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         addView(tapText, tapParams)
 
-        // Simulated game initialization.
         postDelayed({
             finishLoading()
         }, 3000)
@@ -83,7 +78,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
             context.packageName
         )
 
-        // No video yet — use the normal loading screen.
         if (resourceId == 0) {
             return
         }
@@ -97,7 +91,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         video.layoutParams = videoParams
 
-        // Put video behind the Canvas UI.
         addView(video, 0)
 
         videoView = video
@@ -109,16 +102,12 @@ class GameScreen(context: Context) : FrameLayout(context) {
         video.setVideoURI(videoUri)
 
         video.setOnPreparedListener { mediaPlayer ->
-
             mediaPlayer.isLooping = true
-
             video.start()
         }
 
         video.setOnErrorListener { _, _, _ ->
-
             video.visibility = View.GONE
-
             true
         }
     }
@@ -148,16 +137,35 @@ class GameScreen(context: Context) : FrameLayout(context) {
         backgroundView.invalidate()
     }
 
+    private fun openModeMenu() {
+
+        currentScreen = Screen.MODE_MENU
+
+        tapText.visibility = View.GONE
+
+        backgroundView.invalidate()
+    }
+
+    private fun closeModeMenu() {
+
+        currentScreen = Screen.LOBBY
+
+        backgroundView.invalidate()
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
 
         if (event.action != MotionEvent.ACTION_UP) {
             return true
         }
 
+        val x = event.x
+        val y = event.y
+
         when (currentScreen) {
 
             Screen.LOADING -> {
-                // Loading screen cannot be skipped.
+                // Loading cannot be skipped.
             }
 
             Screen.TAP_TO_START -> {
@@ -165,7 +173,101 @@ class GameScreen(context: Context) : FrameLayout(context) {
             }
 
             Screen.LOBBY -> {
-                // Lobby controls will be connected next.
+
+                val modeLeft = screenWidth / 2f - 120f
+                val modeTop = 190f
+                val modeRight = screenWidth / 2f + 120f
+                val modeBottom = 245f
+
+                if (
+                    x >= modeLeft &&
+                    x <= modeRight &&
+                    y >= modeTop &&
+                    y <= modeBottom
+                ) {
+                    openModeMenu()
+                }
+            }
+
+            Screen.MODE_MENU -> {
+
+                val menuWidth = 360f
+                val menuHeight = 430f
+
+                val menuLeft = screenWidth / 2f - menuWidth / 2f
+                val menuTop = screenHeight / 2f - menuHeight / 2f
+                val menuRight = screenWidth / 2f + menuWidth / 2f
+                val menuBottom = screenHeight / 2f + menuHeight / 2f
+
+                if (
+                    x < menuLeft ||
+                    x > menuRight ||
+                    y < menuTop ||
+                    y > menuBottom
+                ) {
+                    closeModeMenu()
+                    return true
+                }
+
+                // Close button
+                val closeTop = menuBottom - 65f
+
+                if (y >= closeTop && y <= menuBottom) {
+                    closeModeMenu()
+                    return true
+                }
+
+                // Mode selections
+                val firstModeTop = menuTop + 75f
+                val modeHeight = 50f
+                val modeGap = 10f
+
+                for (i in 0 until 5) {
+
+                    val itemTop =
+                        firstModeTop + i * (modeHeight + modeGap)
+
+                    val itemBottom =
+                        itemTop + modeHeight
+
+                    if (
+                        x >= menuLeft + 30f &&
+                        x <= menuRight - 30f &&
+                        y >= itemTop &&
+                        y <= itemBottom
+                    ) {
+
+                        when (i) {
+
+                            0 -> {
+                                // Quick Race
+                                closeModeMenu()
+                            }
+
+                            1 -> {
+                                // Online Race
+                                closeModeMenu()
+                            }
+
+                            2 -> {
+                                // Heist
+                                closeModeMenu()
+                            }
+
+                            3 -> {
+                                // Private Lobby
+                                closeModeMenu()
+                            }
+
+                            4 -> {
+                                // Special Events
+                                closeModeMenu()
+                            }
+                        }
+
+                        return true
+                    }
+                }
             }
         }
 
@@ -195,18 +297,24 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 Screen.LOBBY -> {
                     drawLobby(canvas)
                 }
+
+                Screen.MODE_MENU -> {
+                    drawLobby(canvas)
+                    drawModeMenu(canvas)
+                }
             }
         }
 
         private fun drawLoadingScreen(canvas: Canvas) {
 
-            /*
-             * Transparent dark overlay.
-             *
-             * If the video exists, this lets the cinematic remain visible
-             * underneath while making the game title readable.
-             */
-            canvas.drawColor(Color.argb(105, 0, 0, 0))
+            canvas.drawColor(
+                Color.argb(
+                    105,
+                    0,
+                    0,
+                    0
+                )
+            )
 
             paint.textAlign = Paint.Align.CENTER
             paint.typeface = Typeface.DEFAULT_BOLD
@@ -277,7 +385,13 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         private fun drawTapToStart(canvas: Canvas) {
 
-            canvas.drawColor(Color.rgb(5, 8, 15))
+            canvas.drawColor(
+                Color.rgb(
+                    5,
+                    8,
+                    15
+                )
+            )
 
             paint.textAlign = Paint.Align.CENTER
             paint.typeface = Typeface.DEFAULT_BOLD
@@ -294,13 +408,21 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         private fun drawLobby(canvas: Canvas) {
 
-            canvas.drawColor(Color.rgb(7, 12, 20))
+            canvas.drawColor(
+                Color.rgb(
+                    7,
+                    12,
+                    20
+                )
+            )
 
-            // -------------------------
             // PROFILE
-            // -------------------------
 
-            paint.color = Color.rgb(25, 30, 40)
+            paint.color = Color.rgb(
+                25,
+                30,
+                40
+            )
 
             canvas.drawRoundRect(
                 20f,
@@ -324,11 +446,13 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 paint
             )
 
-            // -------------------------
             // RACE COINS
-            // -------------------------
 
-            paint.color = Color.rgb(25, 30, 40)
+            paint.color = Color.rgb(
+                25,
+                30,
+                40
+            )
 
             canvas.drawRoundRect(
                 175f,
@@ -350,11 +474,13 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 paint
             )
 
-            // -------------------------
             // GEMS
-            // -------------------------
 
-            paint.color = Color.rgb(25, 30, 40)
+            paint.color = Color.rgb(
+                25,
+                30,
+                40
+            )
 
             canvas.drawRoundRect(
                 screenWidth - 155f,
@@ -375,9 +501,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 paint
             )
 
-            // -------------------------
             // PLAYER LOBBY
-            // -------------------------
 
             paint.textAlign = Paint.Align.CENTER
             paint.textSize = 30f
@@ -390,16 +514,18 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 paint
             )
 
-            // -------------------------
             // SELECT MODE
-            // -------------------------
 
             val modeLeft = screenWidth / 2f - 120f
             val modeTop = 190f
             val modeRight = screenWidth / 2f + 120f
             val modeBottom = 245f
 
-            paint.color = Color.rgb(35, 85, 170)
+            paint.color = Color.rgb(
+                35,
+                85,
+                170
+            )
 
             canvas.drawRoundRect(
                 modeLeft,
@@ -421,11 +547,13 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 paint
             )
 
-            // -------------------------
             // QUICK RACE
-            // -------------------------
 
-            paint.color = Color.rgb(25, 30, 40)
+            paint.color = Color.rgb(
+                25,
+                30,
+                40
+            )
 
             canvas.drawRoundRect(
                 screenWidth / 2f - 105f,
@@ -447,11 +575,13 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 paint
             )
 
-            // -------------------------
             // SHOP
-            // -------------------------
 
-            paint.color = Color.rgb(25, 30, 40)
+            paint.color = Color.rgb(
+                25,
+                30,
+                40
+            )
 
             canvas.drawRoundRect(
                 20f,
@@ -474,13 +604,15 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 paint
             )
 
-            // -------------------------
             // FRIENDS
-            // -------------------------
 
             val friendsLeft = screenWidth - 225f
 
-            paint.color = Color.rgb(18, 23, 32)
+            paint.color = Color.rgb(
+                18,
+                23,
+                32
+            )
 
             canvas.drawRoundRect(
                 friendsLeft,
@@ -531,6 +663,140 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 "OFFLINE •  John",
                 friendsLeft + 100f,
                 280f,
+                paint
+            )
+        }
+
+        private fun drawModeMenu(canvas: Canvas) {
+
+            // Darken the lobby behind the menu.
+
+            paint.color = Color.argb(
+                190,
+                0,
+                0,
+                0
+            )
+
+            canvas.drawRect(
+                0f,
+                0f,
+                screenWidth.toFloat(),
+                screenHeight.toFloat(),
+                paint
+            )
+
+            val menuWidth = 360f
+            val menuHeight = 430f
+
+            val menuLeft =
+                screenWidth / 2f - menuWidth / 2f
+
+            val menuTop =
+                screenHeight / 2f - menuHeight / 2f
+
+            val menuRight =
+                screenWidth / 2f + menuWidth / 2f
+
+            val menuBottom =
+                screenHeight / 2f + menuHeight / 2f
+
+            // Menu background
+
+            paint.color = Color.rgb(
+                15,
+                20,
+                30
+            )
+
+            canvas.drawRoundRect(
+                menuLeft,
+                menuTop,
+                menuRight,
+                menuBottom,
+                20f,
+                20f,
+                paint
+            )
+
+            // Title
+
+            paint.color = Color.WHITE
+            paint.textAlign = Paint.Align.CENTER
+            paint.typeface = Typeface.DEFAULT_BOLD
+            paint.textSize = 23f
+
+            canvas.drawText(
+                "SELECT MODE",
+                screenWidth / 2f,
+                menuTop + 48f,
+                paint
+            )
+
+            val modes = arrayOf(
+                "QUICK RACE",
+                "ONLINE RACE",
+                "HEIST",
+                "PRIVATE LOBBY",
+                "SPECIAL EVENTS"
+            )
+
+            val modeHeight = 50f
+            val modeGap = 10f
+            val firstModeTop = menuTop + 75f
+
+            for (i in modes.indices) {
+
+                val itemTop =
+                    firstModeTop +
+                            i * (modeHeight + modeGap)
+
+                val itemBottom =
+                    itemTop + modeHeight
+
+                paint.color = Color.rgb(
+                    27,
+                    35,
+                    48
+                )
+
+                canvas.drawRoundRect(
+                    menuLeft + 30f,
+                    itemTop,
+                    menuRight - 30f,
+                    itemBottom,
+                    10f,
+                    10f,
+                    paint
+                )
+
+                paint.color = Color.WHITE
+                paint.textSize = 15f
+                paint.typeface = Typeface.DEFAULT_BOLD
+
+                canvas.drawText(
+                    modes[i],
+                    screenWidth / 2f,
+                    itemTop + 31f,
+                    paint
+                )
+            }
+
+            // CLOSE
+
+            paint.color = Color.rgb(
+                100,
+                105,
+                115
+            )
+
+            paint.textSize = 14f
+            paint.typeface = Typeface.DEFAULT
+
+            canvas.drawText(
+                "CLOSE",
+                screenWidth / 2f,
+                menuBottom - 28f,
                 paint
             )
         }
