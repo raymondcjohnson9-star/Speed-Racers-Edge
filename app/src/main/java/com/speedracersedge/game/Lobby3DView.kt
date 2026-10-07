@@ -1,239 +1,62 @@
 package com.speedracersedge.game
 
 import android.content.Context
-import android.view.Choreographer
+import android.graphics.Color
+import android.graphics.Typeface
 import android.view.MotionEvent
-import android.view.Surface
+import android.widget.TextView
+import android.view.Gravity
 import android.view.SurfaceView
 
-import com.google.android.filament.Camera
-import com.google.android.filament.Engine
-import com.google.android.filament.EntityManager
-import com.google.android.filament.Renderer
-import com.google.android.filament.Scene
-import com.google.android.filament.SwapChain
-import com.google.android.filament.View
-import com.google.android.filament.android.UiHelper
-
 class Lobby3DView(context: Context) : SurfaceView(context) {
-
-    private val engine: Engine =
-        Engine.create()
-
-    private val renderer: Renderer =
-        engine.createRenderer()
-
-    private val scene: Scene =
-        engine.createScene()
-
-    private val cameraEntity: Int =
-        EntityManager
-            .get()
-            .create()
-
-    private val camera: Camera =
-        engine.createCamera(cameraEntity)
-
-    private val filamentView: View =
-        engine.createView()
-
-    private var swapChain: SwapChain? = null
-
-    private val uiHelper =
-        UiHelper(
-            UiHelper.ContextErrorPolicy.DONT_CHECK
-        )
 
     private var previousX = 0f
 
     private var rotation = 0f
 
-    private var isDestroyed = false
-
-    private val frameCallback =
-        object : Choreographer.FrameCallback {
-
-            override fun doFrame(
-                frameTimeNanos: Long
-            ) {
-
-                if (isDestroyed) {
-                    return
-                }
-
-                renderFrame(frameTimeNanos)
-
-                if (!isDestroyed) {
-
-                    Choreographer
-                        .getInstance()
-                        .postFrameCallback(this)
-                }
-            }
-        }
+    private val message =
+        TextView(context)
 
     init {
 
-        isFocusable = true
-
-        filamentView.scene = scene
-
-        filamentView.camera = camera
-
-        filamentView.blendMode =
-            View.BlendMode.OPAQUE
-
-        camera.setProjection(
-            45.0,
-            1.0,
-            0.1,
-            100.0,
-            Camera.Fov.VERTICAL
+        setBackgroundColor(
+            Color.rgb(10, 15, 28)
         )
 
-        camera.lookAt(
-            0.0,
-            2.0,
-            7.0,
+        message.text =
+            "3D VIEW TEST\n\nFilament temporarily disabled"
 
-            0.0,
-            1.0,
-            0.0,
-
-            0.0,
-            1.0,
-            0.0
+        message.setTextColor(
+            Color.WHITE
         )
 
-        uiHelper.renderCallback =
-            object : UiHelper.RendererCallback {
+        message.textSize = 18f
 
-                override fun onNativeWindowChanged(
-                    surface: Surface
-                ) {
+        message.typeface =
+            Typeface.DEFAULT_BOLD
 
-                    if (isDestroyed) {
-                        return
-                    }
+        message.gravity =
+            Gravity.CENTER
 
-                    swapChain?.let {
-
-                        engine.destroySwapChain(it)
-                    }
-
-                    swapChain =
-                        engine.createSwapChain(
-                            surface
-                        )
-
-                    startRendering()
-                }
-
-                override fun onDetachedFromSurface() {
-
-                    stopRendering()
-
-                    swapChain?.let {
-
-                        engine.destroySwapChain(it)
-                    }
-
-                    swapChain = null
-                }
-
-                override fun onResized(
-                    width: Int,
-                    height: Int
-                ) {
-
-                    if (
-                        width <= 0 ||
-                        height <= 0
-                    ) {
-                        return
-                    }
-
-                    camera.setProjection(
-                        45.0,
-
-                        width.toDouble() /
-                            height.toDouble(),
-
-                        0.1,
-
-                        100.0,
-
-                        Camera.Fov.VERTICAL
-                    )
-                }
-            }
-
-        uiHelper.attachTo(this)
+        addViewToSurface()
     }
 
-    private fun startRendering() {
+    private fun addViewToSurface() {
 
-        if (isDestroyed) {
-            return
-        }
-
-        Choreographer
-            .getInstance()
-            .removeFrameCallback(
-                frameCallback
+        val layoutParams =
+            android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
             )
 
-        Choreographer
-            .getInstance()
-            .postFrameCallback(
-                frameCallback
-            )
-    }
-
-    private fun stopRendering() {
-
-        Choreographer
-            .getInstance()
-            .removeFrameCallback(
-                frameCallback
-            )
-    }
-
-    private fun renderFrame(
-        frameTimeNanos: Long
-    ) {
-
-        if (isDestroyed) {
-            return
-        }
-
-        val currentSwapChain =
-            swapChain ?: return
-
-        try {
-
-            if (
-                renderer.beginFrame(
-                    currentSwapChain,
-                    frameTimeNanos
-                )
-            ) {
-
-                renderer.render(
-                    filamentView
-                )
-
-                renderer.endFrame()
-            }
-
-        } catch (
-            exception: Exception
-        ) {
-
-            exception.printStackTrace()
-
-            stopRendering()
-        }
+        /*
+         * SurfaceView cannot directly contain
+         * child views in the normal way.
+         *
+         * The TextView is therefore only used
+         * as a diagnostic object and the surface
+         * itself remains the visible background.
+         */
     }
 
     override fun onTouchEvent(
@@ -287,40 +110,8 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
     }
 
     fun destroy() {
-
-        if (isDestroyed) {
-            return
-        }
-
-        isDestroyed = true
-
-        stopRendering()
-
-        uiHelper.detach()
-
-        swapChain?.let {
-
-            engine.destroySwapChain(it)
-
-            swapChain = null
-        }
-
-        engine.destroyRenderer(
-            renderer
-        )
-
-        engine.destroyView(
-            filamentView
-        )
-
-        engine.destroyScene(
-            scene
-        )
-
-        engine.destroyEntity(
-            cameraEntity
-        )
-
-        engine.destroy()
+        // Nothing to clean up.
+        // Filament is intentionally disabled
+        // during this diagnostic test.
     }
 }
