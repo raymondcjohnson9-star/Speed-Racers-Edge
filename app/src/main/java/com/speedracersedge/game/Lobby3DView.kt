@@ -17,7 +17,8 @@ import com.google.android.filament.android.UiHelper
 
 class Lobby3DView(context: Context) : SurfaceView(context) {
 
-    private val engine: Engine = Engine.create()
+    private val engine: Engine =
+        Engine.create()
 
     private val renderer: Renderer =
         engine.createRenderer()
@@ -26,7 +27,9 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
         engine.createScene()
 
     private val cameraEntity: Int =
-        EntityManager.get().create()
+        EntityManager
+            .get()
+            .create()
 
     private val camera: Camera =
         engine.createCamera(cameraEntity)
@@ -58,9 +61,10 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                     return
                 }
 
-                renderFrame()
+                renderFrame(frameTimeNanos)
 
                 if (!isDestroyed) {
+
                     Choreographer
                         .getInstance()
                         .postFrameCallback(this)
@@ -73,6 +77,7 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
         isFocusable = true
 
         filamentView.scene = scene
+
         filamentView.camera = camera
 
         filamentView.blendMode =
@@ -112,11 +117,14 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                     }
 
                     swapChain?.let {
+
                         engine.destroySwapChain(it)
                     }
 
                     swapChain =
-                        engine.createSwapChain(surface)
+                        engine.createSwapChain(
+                            surface
+                        )
 
                     startRendering()
                 }
@@ -126,6 +134,7 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                     stopRendering()
 
                     swapChain?.let {
+
                         engine.destroySwapChain(it)
                     }
 
@@ -137,16 +146,23 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                     height: Int
                 ) {
 
-                    if (width <= 0 || height <= 0) {
+                    if (
+                        width <= 0 ||
+                        height <= 0
+                    ) {
                         return
                     }
 
                     camera.setProjection(
                         45.0,
+
                         width.toDouble() /
                             height.toDouble(),
+
                         0.1,
+
                         100.0,
+
                         Camera.Fov.VERTICAL
                     )
                 }
@@ -183,7 +199,9 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
             )
     }
 
-    private fun renderFrame() {
+    private fun renderFrame(
+        frameTimeNanos: Long
+    ) {
 
         if (isDestroyed) {
             return
@@ -194,8 +212,10 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
 
         try {
 
-            if (renderer.beginFrame(
-                    currentSwapChain
+            if (
+                renderer.beginFrame(
+                    currentSwapChain,
+                    frameTimeNanos
                 )
             ) {
 
@@ -206,7 +226,9 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                 renderer.endFrame()
             }
 
-        } catch (exception: Exception) {
+        } catch (
+            exception: Exception
+        ) {
 
             exception.printStackTrace()
 
@@ -218,7 +240,9 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
         event: MotionEvent
     ): Boolean {
 
-        when (event.actionMasked) {
+        when (
+            event.actionMasked
+        ) {
 
             MotionEvent.ACTION_DOWN -> {
 
@@ -281,13 +305,21 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
             swapChain = null
         }
 
-        engine.destroyRenderer(renderer)
+        engine.destroyRenderer(
+            renderer
+        )
 
-        engine.destroyView(filamentView)
+        engine.destroyView(
+            filamentView
+        )
 
-        engine.destroyScene(scene)
+        engine.destroyScene(
+            scene
+        )
 
-        engine.destroyEntity(cameraEntity)
+        engine.destroyEntity(
+            cameraEntity
+        )
 
         engine.destroy()
     }
