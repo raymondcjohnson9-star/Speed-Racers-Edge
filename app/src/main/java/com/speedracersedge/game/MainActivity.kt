@@ -21,6 +21,6 @@ class MainActivity : Activity() {
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         )
 
-        setContentView(GameView(this))
+        setContentView(GameScreen(this))
     }
 }
