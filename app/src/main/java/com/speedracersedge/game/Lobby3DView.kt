@@ -1,10 +1,10 @@
 package com.speedracersedge.game
 
 import android.content.Context
+import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.SurfaceView
-import android.view.Choreographer
 
 import com.google.android.filament.Camera
 import com.google.android.filament.Engine
@@ -68,8 +68,8 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                         return
                     }
 
-                    val currentEngine = engine
-                        ?: return
+                    val currentEngine =
+                        engine ?: return
 
                     swapChain?.let {
                         currentEngine.destroySwapChain(it)
@@ -85,8 +85,8 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
 
                     stopRendering()
 
-                    val currentEngine = engine
-                        ?: return
+                    val currentEngine =
+                        engine ?: return
 
                     swapChain?.let {
                         currentEngine.destroySwapChain(it)
@@ -106,8 +106,7 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
 
                     camera?.setProjection(
                         45.0,
-                        width.toDouble() /
-                            height.toDouble(),
+                        width.toDouble() / height.toDouble(),
                         0.1,
                         100.0,
                         Camera.Fov.VERTICAL
@@ -193,9 +192,6 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
             return
         }
 
-        val currentEngine =
-            engine ?: return
-
         val currentRenderer =
             renderer ?: return
 
@@ -213,7 +209,8 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
             ) {
 
                 currentRenderer.render(
-                    currentView
+                    currentView,
+                    0
                 )
 
                 currentRenderer.endFrame()
