@@ -5,6 +5,7 @@ import android.view.MotionEvent
 import android.view.SurfaceView
 import com.google.android.filament.Camera
 import com.google.android.filament.Engine
+import com.google.android.filament.EntityManager
 import com.google.android.filament.Renderer
 import com.google.android.filament.Scene
 import com.google.android.filament.SwapChain
@@ -14,16 +15,28 @@ import com.google.android.filament.android.UiHelper
 class Lobby3DView(context: Context) : SurfaceView(context) {
 
     private val engine = Engine.create()
-    private val renderer = engine.createRenderer()
-    private val scene = engine.createScene()
-    private val camera = engine.createCamera()
 
-    private val filamentView = engine.createView()
+    private val renderer =
+        engine.createRenderer()
+
+    private val scene =
+        engine.createScene()
+
+    private val cameraEntity =
+        EntityManager.get().create()
+
+    private val camera =
+        engine.createCamera(cameraEntity)
+
+    private val filamentView =
+        engine.createView()
 
     private var swapChain: SwapChain? = null
 
     private val uiHelper =
-        UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK)
+        UiHelper(
+            UiHelper.ContextErrorPolicy.DONT_CHECK
+        )
 
     private var previousX = 0f
     private var rotation = 0f
@@ -33,7 +46,8 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
         filamentView.scene = scene
         filamentView.camera = camera
 
-        filamentView.blendMode = View.BlendMode.OPAQUE
+        filamentView.blendMode =
+            View.BlendMode.OPAQUE
 
         camera.setProjection(
             45.0,
@@ -44,9 +58,17 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
         )
 
         camera.lookAt(
-            0.0, 2.0, 7.0,
-            0.0, 1.0, 0.0,
-            0.0, 1.0, 0.0
+            0.0,
+            2.0,
+            7.0,
+
+            0.0,
+            1.0,
+            0.0,
+
+            0.0,
+            1.0,
+            0.0
         )
 
         uiHelper.renderCallback =
@@ -55,6 +77,7 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                 override fun onNativeWindowChanged(
                     surface: android.view.Surface
                 ) {
+
                     swapChain?.let {
                         engine.destroySwapChain(it)
                     }
@@ -64,6 +87,7 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                 }
 
                 override fun onDetachedFromSurface() {
+
                     swapChain?.let {
                         engine.destroySwapChain(it)
                     }
@@ -75,11 +99,13 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
                     width: Int,
                     height: Int
                 ) {
+
                     if (height > 0) {
+
                         camera.setProjection(
                             45.0,
                             width.toDouble() /
-                                    height.toDouble(),
+                                height.toDouble(),
                             0.1,
                             100.0,
                             Camera.Fov.VERTICAL
@@ -100,7 +126,9 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
         when (event.actionMasked) {
 
             MotionEvent.ACTION_DOWN -> {
+
                 previousX = event.x
+
                 return true
             }
 
@@ -117,11 +145,14 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
             }
 
             MotionEvent.ACTION_UP -> {
+
                 performClick()
+
                 return true
             }
 
             MotionEvent.ACTION_CANCEL -> {
+
                 return true
             }
         }
@@ -130,7 +161,9 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
     }
 
     override fun performClick(): Boolean {
+
         super.performClick()
+
         return true
     }
 
@@ -139,14 +172,19 @@ class Lobby3DView(context: Context) : SurfaceView(context) {
         uiHelper.detach()
 
         swapChain?.let {
+
             engine.destroySwapChain(it)
+
             swapChain = null
         }
 
         engine.destroyRenderer(renderer)
+
         engine.destroyView(filamentView)
+
         engine.destroyScene(scene)
-        engine.destroyCamera(camera)
+
+        engine.destroyEntity(cameraEntity)
 
         engine.destroy()
     }
