@@ -865,40 +865,179 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
         )
     }
+        addView(
+            overlay,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+    }
 
     // =========================================================
-    // FRIENDS PANEL
+    // ADD FRIEND
     // =========================================================
 
-    private fun showFriendsPanel() {
+    private fun addFriend(
+        parent: LinearLayout,
+        name: String,
+        status: String,
+        overlay: FrameLayout
+    ) {
 
-        val overlay =
-            FrameLayout(context)
+        val row =
+            LinearLayout(context)
 
-        overlay.setBackgroundColor(
-            Color.argb(
-                235,
-                3,
-                6,
-                12
+        row.orientation =
+            LinearLayout.HORIZONTAL
+
+        row.gravity =
+            Gravity.CENTER_VERTICAL
+
+        row.setPadding(
+            10,
+            5,
+            10,
+            5
+        )
+
+        val info =
+            LinearLayout(context)
+
+        info.orientation =
+            LinearLayout.VERTICAL
+
+        val nameText =
+            createText(name)
+
+        nameText.textSize =
+            16f
+
+        nameText.typeface =
+            Typeface.DEFAULT_BOLD
+
+        val statusText =
+            createText(status)
+
+        statusText.textSize =
+            12f
+
+        statusText.setTextColor(
+            if (status == "ONLINE") {
+                Color.GREEN
+            } else {
+                Color.GRAY
+            }
+        )
+
+        info.addView(
+            nameText,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                30
             )
         )
 
-        val panel =
-            createPanel()
+        info.addView(
+            statusText,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                25
+            )
+        )
+
+        row.addView(
+            info,
+            LinearLayout.LayoutParams(
+                0,
+                60,
+                1f
+            )
+        )
+
+        if (status == "ONLINE") {
+
+            val invite =
+                createButton(
+                    "INVITE"
+                )
+
+            invite.textSize =
+                11f
+
+            invite.setOnClickListener {
+
+                if (partyPlayers < 4) {
+
+                    partyPlayers += 1
+
+                    removeView(overlay)
+
+                    showLobby()
+                }
+            }
+
+            row.addView(
+                invite,
+                LinearLayout.LayoutParams(
+                    85,
+                    45
+                )
+            )
+        }
+
+        parent.addView(
+            row,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                65
+            )
+        )
+    }
+
+    // =========================================================
+    // MODE MENU
+    // =========================================================
+
+    private fun showModeMenu() {
+
+        removeAllViews()
+
+        currentScreen =
+            Screen.MODE_MENU
+
+        setBackgroundColor(
+            Color.rgb(5, 9, 18)
+        )
+
+        val container =
+            LinearLayout(context)
+
+        container.orientation =
+            LinearLayout.VERTICAL
+
+        container.gravity =
+            Gravity.CENTER
+
+        container.setPadding(
+            35,
+            35,
+            35,
+            35
+        )
 
         val title =
             createText(
-                "INVITE FRIENDS"
+                "SELECT MODE"
             )
 
         title.textSize =
-            24f
+            28f
 
         title.typeface =
             Typeface.DEFAULT_BOLD
 
-        panel.addView(
+        container.addView(
             title,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -906,56 +1045,367 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
         )
 
-        addFriend(
-            panel,
-            "Alex",
-            "ONLINE",
-            overlay
-        )
-
-        addFriend(
-            panel,
-            "Mike",
-            "ONLINE",
-            overlay
-        )
-
-        addFriend(
-            panel,
-            "John",
-            "OFFLINE",
-            overlay
-        )
-
-        val close =
-            createButton(
-                "CLOSE"
+        val modes =
+            listOf(
+                "QUICK RACE",
+                "ONLINE RACE",
+                "HEIST",
+                "PRIVATE LOBBY",
+                "SPECIAL EVENTS"
             )
 
-        close.setOnClickListener {
-            removeView(overlay)
+        for (mode in modes) {
+
+            val button =
+                createButton(mode)
+
+            button.textSize =
+                15f
+
+            button.setOnClickListener {
+
+                selectedMode =
+                    mode
+
+                showLobby()
+            }
+
+            val params =
+                LinearLayout.LayoutParams(
+                    300,
+                    55
+                )
+
+            params.topMargin =
+                10
+
+            params.bottomMargin =
+                10
+
+            container.addView(
+                button,
+                params
+            )
         }
 
-        panel.addView(
-            close,
+        val back =
+            createButton(
+                "BACK TO LOBBY"
+            )
+
+        back.setOnClickListener {
+            showLobby()
+        }
+
+        val backParams =
+            LinearLayout.LayoutParams(
+                300,
+                55
+            )
+
+        backParams.topMargin =
+            20
+
+        container.addView(
+            back,
+            backParams
+        )
+
+        addView(
+            container,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+            )
+        )
+    }
+
+    // =========================================================
+    // RACE STARTING SCREEN
+    // =========================================================
+
+    private fun showRaceStartingScreen() {
+
+        removeAllViews()
+
+        setBackgroundColor(
+            Color.rgb(3, 6, 12)
+        )
+
+        val container =
+            LinearLayout(context)
+
+        container.orientation =
+            LinearLayout.VERTICAL
+
+        container.gravity =
+            Gravity.CENTER
+
+        container.setPadding(
+            30,
+            30,
+            30,
+            30
+        )
+
+        val title =
+            createText(
+                "MATCH READY"
+            )
+
+        title.textSize =
+            30f
+
+        title.typeface =
+            Typeface.DEFAULT_BOLD
+
+        container.addView(
+            title,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                60
+            )
+        )
+
+        val modeText =
+            createText(
+                selectedMode
+            )
+
+        modeText.textSize =
+            20f
+
+        modeText.typeface =
+            Typeface.DEFAULT_BOLD
+
+        container.addView(
+            modeText,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                50
+            )
+        )
+
+        val playersText =
+            createText(
+                "PLAYERS: $partyPlayers/4"
+            )
+
+        playersText.textSize =
+            17f
+
+        container.addView(
+            playersText,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                45
+            )
+        )
+
+        val status =
+            createText(
+                "GET READY..."
+            )
+
+        status.textSize =
+            22f
+
+        status.typeface =
+            Typeface.DEFAULT_BOLD
+
+        container.addView(
+            status,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 55
             )
         )
 
-        overlay.addView(
-            panel,
-            FrameLayout.LayoutParams(
-                380,
-                330,
-                Gravity.CENTER
+        val back =
+            createButton(
+                "BACK TO LOBBY"
             )
+
+        back.setOnClickListener {
+            showLobby()
+        }
+
+        val backParams =
+            LinearLayout.LayoutParams(
+                220,
+                55
+            )
+
+        backParams.topMargin =
+            30
+
+        container.addView(
+            back,
+            backParams
         )
 
         addView(
-            overlay,
+            container,
             FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-          
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+            )
+        )
+    }
+
+    // =========================================================
+    // UI HELPERS
+    // =========================================================
+
+    private fun createPanel(): LinearLayout {
+
+        val panel =
+            LinearLayout(context)
+
+        panel.orientation =
+            LinearLayout.VERTICAL
+
+        panel.gravity =
+            Gravity.CENTER
+
+        panel.setPadding(
+            15,
+            15,
+            15,
+            15
+        )
+
+        panel.background =
+            roundedBackground(
+                Color.argb(
+                    220,
+                    18,
+                    26,
+                    45
+                ),
+                22
+            )
+
+        return panel
+    }
+
+    private fun createText(
+        text: String
+    ): TextView {
+
+        val view =
+            TextView(context)
+
+        view.text =
+            text
+
+        view.setTextColor(
+            Color.WHITE
+        )
+
+        view.gravity =
+            Gravity.CENTER
+
+        view.textSize =
+            16f
+
+        return view
+    }
+
+    private fun createButton(
+        text: String
+    ): Button {
+
+        val button =
+            Button(context)
+
+        button.text =
+            text
+
+        button.setTextColor(
+            Color.WHITE
+        )
+
+        button.textSize =
+            13f
+
+        button.isAllCaps =
+            false
+
+        button.background =
+            roundedBackground(
+                Color.rgb(
+                    25,
+                    42,
+                    72
+                ),
+                18
+            )
+
+        return button
+    }
+
+    private fun roundedBackground(
+        color: Int,
+        radius: Int
+    ): GradientDrawable {
+
+        val drawable =
+            GradientDrawable()
+
+        drawable.setColor(
+            color
+        )
+
+        drawable.cornerRadius =
+            radius.toFloat()
+
+        drawable.setStroke(
+            1,
+            Color.argb(
+                100,
+                255,
+                255,
+                255
+            )
+        )
+
+        return drawable
+    }
+
+    private fun frameParams(
+        width: Int,
+        height: Int,
+        gravity: Int,
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int
+    ): FrameLayout.LayoutParams {
+
+        val params =
+            FrameLayout.LayoutParams(
+                width,
+                height
+            )
+
+        params.gravity =
+            gravity
+
+        params.leftMargin =
+            left
+
+        params.topMargin =
+            top
+
+        params.rightMargin =
+            right
+
+        params.bottomMargin =
+            bottom
+
+        return params
+    }
+}
