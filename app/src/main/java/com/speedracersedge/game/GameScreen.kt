@@ -48,13 +48,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
     init {
         setBackgroundColor(Color.rgb(3, 6, 14))
         showLoadingScreen()
-
-        // Longer initial loading sequence.
-        postDelayed({
-            if (currentScreen == Screen.LOADING) {
-                showTapToStart()
-            }
-        }, 6000)
     }
 
     // ------------------------------------------------------------
@@ -165,24 +158,58 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
     private fun animateLoading() {
         loadingProgress = 0
+        progressBar.progress = 0
 
         val runnable = object : Runnable {
             override fun run() {
                 if (currentScreen != Screen.LOADING) return
 
-                loadingProgress += 1
+                loadingProgress = min(
+                    loadingProgress + 1,
+                    100
+                )
+
                 progressBar.progress = loadingProgress
 
                 loadingText.text = when {
-                    loadingProgress < 20 -> "LOADING GAME..."
-                    loadingProgress < 40 -> "LOADING VEHICLES..."
-                    loadingProgress < 60 -> "LOADING GARAGE..."
-                    loadingProgress < 80 -> "LOADING MULTIPLAYER..."
-                    else -> "FINALIZING..."
+                    loadingProgress < 20 ->
+                        "LOADING GAME..."
+
+                    loadingProgress < 40 ->
+                        "LOADING VEHICLES..."
+
+                    loadingProgress < 60 ->
+                        "LOADING GARAGE..."
+
+                    loadingProgress < 80 ->
+                        "LOADING MULTIPLAYER..."
+
+                    loadingProgress < 100 ->
+                        "FINALIZING..."
+
+                    else ->
+                        "READY!"
                 }
 
                 if (loadingProgress < 100) {
-                    postDelayed(this, 55)
+
+                    // 100 steps × 60ms = approximately 6 seconds.
+                    postDelayed(
+                        this,
+                        60
+                    )
+
+                } else {
+
+                    // Hold at 100% briefly so the player
+                    // can actually see the loading complete.
+                    postDelayed({
+
+                        if (currentScreen == Screen.LOADING) {
+                            showTapToStart()
+                        }
+
+                    }, 250)
                 }
             }
         }
@@ -252,7 +279,10 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         tapParams.bottomMargin = 20
 
-        addView(tapToStart, tapParams)
+        addView(
+            tapToStart,
+            tapParams
+        )
     }
 
     // ------------------------------------------------------------
@@ -264,7 +294,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
         currentScreen = Screen.LOBBY
         setBackgroundColor(Color.rgb(3, 6, 14))
 
-        // Cinematic racing background.
         val background = RacingBackgroundView(context)
         background.showRoad = true
 
@@ -276,7 +305,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
         )
 
-        // Dark cinematic overlay.
         val overlay = View(context)
         overlay.setBackgroundColor(Color.argb(105, 0, 0, 0))
 
@@ -288,8 +316,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
         )
 
-        // Top profile.
         val profile = createButton("👤 PROFILE")
+
         addView(
             profile,
             frameParams(
@@ -439,7 +467,10 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         val partyPanel = createPanel()
 
-        val partyTitle = createText("YOUR PARTY  $partyPlayers/4")
+        val partyTitle = createText(
+            "YOUR PARTY  $partyPlayers/4"
+        )
+
         partyTitle.textSize = 18f
         partyTitle.typeface = Typeface.DEFAULT_BOLD
 
@@ -623,6 +654,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         occupied: Boolean
     ) {
         val slot = LinearLayout(context)
+
         slot.orientation = LinearLayout.HORIZONTAL
         slot.gravity = Gravity.CENTER_VERTICAL
         slot.setPadding(8, 4, 8, 4)
@@ -644,11 +676,14 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         val nameText = createText(name)
         nameText.textSize = 14f
-        nameText.gravity = Gravity.START or Gravity.CENTER_VERTICAL
+        nameText.gravity =
+            Gravity.START or Gravity.CENTER_VERTICAL
 
         val statusText = createText(status)
         statusText.textSize = 11f
-        statusText.gravity = Gravity.START or Gravity.CENTER_VERTICAL
+        statusText.gravity =
+            Gravity.START or Gravity.CENTER_VERTICAL
+
         statusText.setTextColor(Color.LTGRAY)
 
         info.addView(
@@ -1310,7 +1345,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
             paint.style = Paint.Style.FILL
 
-            val buildingHeight = h * 0.22f
             val buildingTop = h * 0.38f
 
             var x = 0f
@@ -1345,7 +1379,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
                     paint
                 )
 
-                // Building windows.
                 var wy = buildingTop - buildingExtra + 12f
 
                 while (wy < h * 0.55f) {
@@ -1515,7 +1548,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
             for (i in 0 until 14) {
                 val normalized =
-                    ((i * 0.19f) + animationOffset / 1000f) % 1f
+                    ((i * 0.19f) +
+                        animationOffset / 1000f) % 1f
 
                 val y =
                     horizonY +
