@@ -5,7 +5,6 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
-import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
@@ -24,10 +23,13 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
     private var currentScreen = Screen.LOADING
 
-    private val backgroundColor =
-        Color.rgb(5, 9, 18)
-
     private var loadingProgress = 0
+
+    private var selectedMode = "ONLINE RACE"
+
+    private var playerReady = false
+
+    private var partyPlayers = 1
 
     private val progressBar =
         ProgressBar(
@@ -42,14 +44,10 @@ class GameScreen(context: Context) : FrameLayout(context) {
     private val tapToStart =
         TextView(context)
 
-    private var selectedMode = "ONLINE RACE"
-
-    private var playerReady = false
-
-    private var partyPlayers = 1
-
     init {
-        setBackgroundColor(backgroundColor)
+        setBackgroundColor(
+            Color.rgb(7, 12, 25)
+        )
 
         showLoadingScreen()
 
@@ -62,14 +60,15 @@ class GameScreen(context: Context) : FrameLayout(context) {
     }
 
     // =========================================================
-    // LOADING SCREEN
+    // LOADING
     // =========================================================
 
     private fun showLoadingScreen() {
 
         removeAllViews()
 
-        currentScreen = Screen.LOADING
+        currentScreen =
+            Screen.LOADING
 
         setBackgroundColor(
             Color.rgb(7, 12, 25)
@@ -92,22 +91,15 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         val title =
-            TextView(context)
+            createText(
+                "SPEED RACERS EDGE"
+            )
 
-        title.text =
-            "SPEED RACERS EDGE"
-
-        title.setTextColor(
-            Color.WHITE
-        )
-
-        title.textSize = 30f
+        title.textSize =
+            30f
 
         title.typeface =
             Typeface.DEFAULT_BOLD
-
-        title.gravity =
-            Gravity.CENTER
 
         container.addView(
             title,
@@ -124,7 +116,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
             Color.LTGRAY
         )
 
-        loadingText.textSize = 15f
+        loadingText.textSize =
+            15f
 
         loadingText.gravity =
             Gravity.CENTER
@@ -135,16 +128,19 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
 
-        textParams.topMargin = 30
+        textParams.topMargin =
+            25
 
         container.addView(
             loadingText,
             textParams
         )
 
-        progressBar.max = 100
+        progressBar.max =
+            100
 
-        progressBar.progress = 0
+        progressBar.progress =
+            0
 
         val progressParams =
             LinearLayout.LayoutParams(
@@ -152,7 +148,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 12
             )
 
-        progressParams.topMargin = 20
+        progressParams.topMargin =
+            20
 
         container.addView(
             progressBar,
@@ -221,22 +218,15 @@ class GameScreen(context: Context) : FrameLayout(context) {
             FrameLayout(context)
 
         val title =
-            TextView(context)
+            createText(
+                "SPEED RACERS EDGE"
+            )
 
-        title.text =
-            "SPEED RACERS EDGE"
-
-        title.textSize = 34f
-
-        title.setTextColor(
-            Color.WHITE
-        )
+        title.textSize =
+            34f
 
         title.typeface =
             Typeface.DEFAULT_BOLD
-
-        title.gravity =
-            Gravity.CENTER
 
         container.addView(
             title,
@@ -250,7 +240,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
         tapToStart.text =
             "TAP TO START"
 
-        tapToStart.textSize = 18f
+        tapToStart.textSize =
+            18f
 
         tapToStart.setTextColor(
             Color.WHITE
@@ -277,7 +268,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 Gravity.BOTTOM
             )
 
-        tapParams.bottomMargin = 35
+        tapParams.bottomMargin =
+            35
 
         container.addView(
             tapToStart,
@@ -294,7 +286,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
     }
 
     // =========================================================
-    // MAIN PARTY LOBBY
+    // MAIN LOBBY
     // =========================================================
 
     private fun showLobby() {
@@ -309,7 +301,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         // -----------------------------------------------------
-        // TOP BAR
+        // TOP LEFT - PROFILE
         // -----------------------------------------------------
 
         val profile =
@@ -330,12 +322,17 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
         )
 
+        // -----------------------------------------------------
+        // COINS
+        // -----------------------------------------------------
+
         val coins =
             createText(
                 "🪙 12,450"
             )
 
-        coins.textSize = 17f
+        coins.textSize =
+            17f
 
         addView(
             coins,
@@ -350,12 +347,17 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
         )
 
+        // -----------------------------------------------------
+        // GEMS
+        // -----------------------------------------------------
+
         val gems =
             createText(
                 "💎 320"
             )
 
-        gems.textSize = 17f
+        gems.textSize =
+            17f
 
         addView(
             gems,
@@ -370,12 +372,17 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
         )
 
+        // -----------------------------------------------------
+        // SETTINGS
+        // -----------------------------------------------------
+
         val settings =
             createButton(
                 "⚙"
             )
 
-        settings.textSize = 22f
+        settings.textSize =
+            22f
 
         addView(
             settings,
@@ -391,7 +398,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         // -----------------------------------------------------
-        // GAME TITLE
+        // TITLE
         // -----------------------------------------------------
 
         val title =
@@ -399,7 +406,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 "SPEED RACERS EDGE"
             )
 
-        title.textSize = 21f
+        title.textSize =
+            21f
 
         title.typeface =
             Typeface.DEFAULT_BOLD
@@ -418,7 +426,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         // -----------------------------------------------------
-        // CENTER GARAGE / PLAYER AREA
+        // CENTER GARAGE
         // -----------------------------------------------------
 
         val garage =
@@ -429,7 +437,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 "YOUR GARAGE"
             )
 
-        garageTitle.textSize = 18f
+        garageTitle.textSize =
+            18f
 
         garageTitle.typeface =
             Typeface.DEFAULT_BOLD
@@ -447,10 +456,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 "🏎️"
             )
 
-        car.textSize = 85f
-
-        car.gravity =
-            Gravity.CENTER
+        car.textSize =
+            85f
 
         garage.addView(
             car,
@@ -465,7 +472,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 "YOUR RACING CAR"
             )
 
-        carName.textSize = 15f
+        carName.textSize =
+            15f
 
         carName.typeface =
             Typeface.DEFAULT_BOLD
@@ -483,7 +491,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 "PLAYER 1 • YOU"
             )
 
-        playerName.textSize = 16f
+        playerName.textSize =
+            16f
 
         garage.addView(
             playerName,
@@ -493,18 +502,17 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
         )
 
-        val garageParams =
-            FrameLayout.LayoutParams(
-                400,
-                270,
-                Gravity.CENTER
-            )
-
-        garageParams.bottomMargin = 25
-
         addView(
             garage,
-            garageParams
+            frameParams(
+                400,
+                270,
+                Gravity.CENTER,
+                0,
+                0,
+                0,
+                25
+            )
         )
 
         // -----------------------------------------------------
@@ -519,7 +527,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 "YOUR PARTY  $partyPlayers/4"
             )
 
-        partyTitle.textSize = 18f
+        partyTitle.textSize =
+            18f
 
         partyTitle.typeface =
             Typeface.DEFAULT_BOLD
@@ -560,23 +569,21 @@ class GameScreen(context: Context) : FrameLayout(context) {
             false
         )
 
-        val partyParams =
-            FrameLayout.LayoutParams(
-                285,
-                315,
-                Gravity.TOP or Gravity.END
-            )
-
-        partyParams.rightMargin = 18
-        partyParams.topMargin = 85
-
         addView(
             partyPanel,
-            partyParams
+            frameParams(
+                285,
+                315,
+                Gravity.TOP or Gravity.END,
+                0,
+                85,
+                18,
+                0
+            )
         )
 
         // -----------------------------------------------------
-        // FRIENDS BUTTON
+        // FRIENDS
         // -----------------------------------------------------
 
         val friends =
@@ -692,20 +699,22 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 "START RACE"
             )
 
-        startRace.textSize = 16f
+        startRace.textSize =
+            16f
 
         startRace.setOnClickListener {
 
             if (!playerReady) {
 
-                playerReady = true
+                playerReady =
+                    true
 
                 showLobby()
 
-                return@setOnClickListener
-            }
+            } else {
 
-            showRaceStartingScreen()
+                showRaceStartingScreen()
+            }
         }
 
         addView(
@@ -751,10 +760,15 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         val avatar =
             createText(
-                if (occupied) "👤" else "＋"
+                if (occupied) {
+                    "👤"
+                } else {
+                    "＋"
+                }
             )
 
-        avatar.textSize = 22f
+        avatar.textSize =
+            22f
 
         slot.addView(
             avatar,
@@ -779,7 +793,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
         nameText.gravity =
             Gravity.START or Gravity.CENTER_VERTICAL
 
-        nameText.textSize = 14f
+        nameText.textSize =
+            14f
 
         val statusText =
             createText(status)
@@ -787,7 +802,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
         statusText.gravity =
             Gravity.START or Gravity.CENTER_VERTICAL
 
-        statusText.textSize = 11f
+        statusText.textSize =
+            11f
 
         statusText.setTextColor(
             Color.LTGRAY
@@ -825,7 +841,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
                     "INVITE"
                 )
 
-            invite.textSize = 10f
+            invite.textSize =
+                10f
 
             invite.setOnClickListener {
                 showFriendsPanel()
@@ -850,7 +867,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
     }
 
     // =========================================================
-    // FRIENDS / INVITE PANEL
+    // FRIENDS PANEL
     // =========================================================
 
     private fun showFriendsPanel() {
@@ -875,7 +892,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 "INVITE FRIENDS"
             )
 
-        title.textSize = 24f
+        title.textSize =
+            24f
 
         title.typeface =
             Typeface.DEFAULT_BOLD
@@ -891,19 +909,22 @@ class GameScreen(context: Context) : FrameLayout(context) {
         addFriend(
             panel,
             "Alex",
-            "ONLINE"
+            "ONLINE",
+            overlay
         )
 
         addFriend(
             panel,
             "Mike",
-            "ONLINE"
+            "ONLINE",
+            overlay
         )
 
         addFriend(
             panel,
             "John",
-            "OFFLINE"
+            "OFFLINE",
+            overlay
         )
 
         val close =
@@ -937,28 +958,4 @@ class GameScreen(context: Context) : FrameLayout(context) {
             FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        )
-    }
-
-    private fun addFriend(
-        parent: LinearLayout,
-        name: String,
-        status: String
-    ) {
-
-        val row =
-            LinearLayout(context)
-
-        row.orientation =
-            LinearLayout.HORIZONTAL
-
-        row.gravity =
-            Gravity.CENTER_VERTICAL
-
-        val friend =
-            createText(
-                "🟢  $name\n     $status"
-            )
-
- 
+          
