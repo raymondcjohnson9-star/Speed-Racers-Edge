@@ -1,14 +1,17 @@
 package com.speedracersedge.game
 
 /**
- * Manages the local party system for Speed Racers Edge.
+ * Manages the party system for Speed Racers Edge.
  *
  * Current version:
  * - Maximum 4 players
  * - Party leader
- * - Send invitations
+ * - Any party member can invite friends
+ * - Invitation sender name
+ * - Invitation sender profile
  * - Accept invitations
  * - Decline invitations
+ * - Cancel invitations
  * - Remove party members
  * - Ready / not-ready status
  *
@@ -20,33 +23,67 @@ class PartyManager {
         const val MAX_PARTY_SIZE = 4
     }
 
+    // ============================================================
+    // PLAYER
+    // ============================================================
+
     data class Player(
         val id: String,
         val name: String,
+        val profileId: String = "",
         val isLeader: Boolean = false,
         var isReady: Boolean = false
     )
 
+    // ============================================================
+    // PARTY INVITATION
+    // ============================================================
+
     data class PartyInvite(
         val inviteId: String,
+
+        // Person sending the invitation
         val fromPlayerId: String,
         val fromPlayerName: String,
+        val fromProfileId: String,
+
+        // Person receiving the invitation
         val toPlayerId: String,
-        val toPlayerName: String
+        val toPlayerName: String,
+        val toProfileId: String
     )
 
-    private val partyMembers = mutableListOf<Player>()
+    private val partyMembers =
+        mutableListOf<Player>()
 
-    private val pendingInvites = mutableListOf<PartyInvite>()
+    private val pendingInvites =
+        mutableListOf<PartyInvite>()
 
     private var inviteCounter = 1
 
+    // ============================================================
+    // LOCAL PLAYER
+    // ============================================================
+
+    private val localPlayerId =
+        "player_1"
+
+    private val localPlayerName =
+        "You"
+
+    private val localProfileId =
+        "profile_default"
+
     init {
-        // The local player starts as party leader.
+
+        // The local player starts as
+        // the party leader.
+
         partyMembers.add(
             Player(
-                id = "player_1",
-                name = "You",
+                id = localPlayerId,
+                name = localPlayerName,
+                profileId = localProfileId,
                 isLeader = true,
                 isReady = false
             )
@@ -66,17 +103,38 @@ class PartyManager {
     }
 
     fun getAvailableSlots(): Int {
-        return MAX_PARTY_SIZE - partyMembers.size
+        return MAX_PARTY_SIZE -
+            partyMembers.size
     }
 
     fun isPartyFull(): Boolean {
-        return partyMembers.size >= MAX_PARTY_SIZE
+        return partyMembers.size >=
+            MAX_PARTY_SIZE
     }
 
-    fun isPlayerInParty(playerId: String): Boolean {
+    fun isPlayerInParty(
+        playerId: String
+    ): Boolean {
+
         return partyMembers.any {
             it.id == playerId
         }
+    }
+
+    fun getPlayer(
+        playerId: String
+    ): Player? {
+
+        return partyMembers.find {
+            it.id == playerId
+        }
+    }
+
+    fun getLocalPlayer(): Player? {
+
+        return getPlayer(
+            localPlayerId
+        )
     }
 
     // ============================================================
@@ -84,63 +142,131 @@ class PartyManager {
     // ============================================================
 
     /**
-     * Sends an invitation to another player.
+     * Sends an invitation from a party member.
      *
-     * Returns:
-     * - PartyInvite when successful
-     * - null when the invitation cannot be sent
+     * Any player already inside the party
+     * can send an invitation.
      */
     fun sendInvite(
-        playerId: String,
-        playerName: String
+        fromPlayerId: String,
+        toPlayerId: String,
+        toPlayerName: String,
+        toProfileId: String = ""
     ): PartyInvite? {
 
-        // Cannot invite someone already in the party.
-        if (isPlayerInParty(playerId)) {
+        // The sender must actually
+        // be inside the party.
+
+        val sender =
+            partyMembers.find {
+                it.id == fromPlayerId
+            } ?: return null
+
+        // Cannot invite someone already
+        // inside the party.
+
+        if (isPlayerInParty(toPlayerId)) {
             return null
         }
 
-        // Cannot invite when the party is full.
+        // Cannot invite when party is full.
+
         if (isPartyFull()) {
             return null
         }
 
-        // Do not send duplicate pending invitations.
+        // Do not create duplicate
+        // pending invitations.
+
         val alreadyInvited =
             pendingInvites.any {
-                it.toPlayerId == playerId
+
+                it.toPlayerId == toPlayerId
             }
 
         if (alreadyInvited) {
             return null
         }
 
-        val invite = PartyInvite(
-            inviteId = "invite_${inviteCounter++}",
-            fromPlayerId = "player_1",
-            fromPlayerName = "You",
-            toPlayerId = playerId,
-            toPlayerName = playerName
-        )
+        val invite =
+            PartyInvite(
 
-        pendingInvites.add(invite)
+                inviteId =
+                    "invite_${inviteCounter++}",
+
+                fromPlayerId =
+                    sender.id,
+
+                fromPlayerName =
+                    sender.name,
+
+                fromProfileId =
+                    sender.profileId,
+
+                toPlayerId =
+                    toPlayerId,
+
+                toPlayerName =
+                    toPlayerName,
+
+                toProfileId =
+                    toProfileId
+            )
+
+        pendingInvites.add(
+            invite
+        )
 
         return invite
     }
 
+    // ============================================================
+    // SIMPLE INVITE HELPER
+    // ============================================================
+
     /**
-     * Returns all invitations currently waiting for a response.
+     * Sends an invitation from the
+     * current local player.
+     *
+     * Useful for the lobby UI.
      */
+    fun sendInvite(
+        playerId: String,
+        playerName: String,
+        profileId: String = ""
+    ): PartyInvite? {
+
+        return sendInvite(
+            fromPlayerId = localPlayerId,
+            toPlayerId = playerId,
+            toPlayerName = playerName,
+            toProfileId = profileId
+        )
+    }
+
+    // ============================================================
+    // PENDING INVITATIONS
+    // ============================================================
+
     fun getPendingInvites(): List<PartyInvite> {
         return pendingInvites.toList()
     }
 
-    /**
-     * Finds a specific invitation.
-     */
-    fun getInvite(inviteId: String): PartyInvite? {
+    fun getInvite(
+        inviteId: String
+    ): PartyInvite? {
+
         return pendingInvites.find {
             it.inviteId == inviteId
+        }
+    }
+
+    fun hasPendingInvite(
+        playerId: String
+    ): Boolean {
+
+        return pendingInvites.any {
+            it.toPlayerId == playerId
         }
     }
 
@@ -151,9 +277,8 @@ class PartyManager {
     /**
      * Accepts an invitation.
      *
-     * The invited player joins the party.
-     *
-     * Returns true when the player successfully joins.
+     * The invited player joins
+     * the sender's party.
      */
     fun acceptInvite(
         inviteId: String
@@ -164,30 +289,57 @@ class PartyManager {
                 it.inviteId == inviteId
             } ?: return false
 
-        // Party may have become full while the invitation
-        // was waiting.
+        // Party may have become full
+        // while invitation was waiting.
+
         if (isPartyFull()) {
-            pendingInvites.remove(invite)
+
+            pendingInvites.remove(
+                invite
+            )
+
             return false
         }
 
         // Prevent duplicate members.
-        if (isPlayerInParty(invite.toPlayerId)) {
-            pendingInvites.remove(invite)
+
+        if (
+            isPlayerInParty(
+                invite.toPlayerId
+            )
+        ) {
+
+            pendingInvites.remove(
+                invite
+            )
+
             return false
         }
 
-        val newPlayer = Player(
-            id = invite.toPlayerId,
-            name = invite.toPlayerName,
-            isLeader = false,
-            isReady = false
+        val newPlayer =
+            Player(
+
+                id =
+                    invite.toPlayerId,
+
+                name =
+                    invite.toPlayerName,
+
+                profileId =
+                    invite.toProfileId,
+
+                isLeader = false,
+
+                isReady = false
+            )
+
+        partyMembers.add(
+            newPlayer
         )
 
-        partyMembers.add(newPlayer)
-
-        // Invitation has now been handled.
-        pendingInvites.remove(invite)
+        pendingInvites.remove(
+            invite
+        )
 
         return true
     }
@@ -196,11 +348,6 @@ class PartyManager {
     // DECLINE INVITE
     // ============================================================
 
-    /**
-     * Declines an invitation.
-     *
-     * The player does not join the party.
-     */
     fun declineInvite(
         inviteId: String
     ): Boolean {
@@ -210,7 +357,9 @@ class PartyManager {
                 it.inviteId == inviteId
             } ?: return false
 
-        pendingInvites.remove(invite)
+        pendingInvites.remove(
+            invite
+        )
 
         return true
     }
@@ -219,10 +368,6 @@ class PartyManager {
     // CANCEL INVITE
     // ============================================================
 
-    /**
-     * Allows the sender to cancel an invitation
-     * before it is accepted.
-     */
     fun cancelInvite(
         inviteId: String
     ): Boolean {
@@ -232,7 +377,9 @@ class PartyManager {
                 it.inviteId == inviteId
             } ?: return false
 
-        pendingInvites.remove(invite)
+        pendingInvites.remove(
+            invite
+        )
 
         return true
     }
@@ -244,7 +391,7 @@ class PartyManager {
     /**
      * Removes a player from the party.
      *
-     * The party leader cannot be removed.
+     * The leader cannot be removed.
      */
     fun removePlayer(
         playerId: String
@@ -259,7 +406,9 @@ class PartyManager {
             return false
         }
 
-        partyMembers.remove(player)
+        partyMembers.remove(
+            player
+        )
 
         return true
     }
@@ -268,9 +417,6 @@ class PartyManager {
     // READY SYSTEM
     // ============================================================
 
-    /**
-     * Changes a player's ready state.
-     */
     fun setReady(
         playerId: String,
         ready: Boolean
@@ -286,12 +432,22 @@ class PartyManager {
         return true
     }
 
-    /**
-     * Returns true when every party member is ready.
-     */
+    fun isPlayerReady(
+        playerId: String
+    ): Boolean {
+
+        return partyMembers
+            .find {
+                it.id == playerId
+            }
+            ?.isReady == true
+    }
+
     fun areAllPlayersReady(): Boolean {
 
-        if (partyMembers.isEmpty()) {
+        if (
+            partyMembers.isEmpty()
+        ) {
             return false
         }
 
@@ -300,10 +456,8 @@ class PartyManager {
         }
     }
 
-    /**
-     * Returns the number of ready players.
-     */
     fun getReadyPlayerCount(): Int {
+
         return partyMembers.count {
             it.isReady
         }
@@ -313,9 +467,6 @@ class PartyManager {
     // MATCH START
     // ============================================================
 
-    /**
-     * Checks whether the leader can start a match.
-     */
     fun canStartMatch(): Boolean {
 
         val leaderExists =
@@ -334,12 +485,6 @@ class PartyManager {
     // LEAVE PARTY
     // ============================================================
 
-    /**
-     * Removes everyone except the local player.
-     *
-     * Useful when leaving a party or returning to
-     * the main lobby.
-     */
     fun leaveParty() {
 
         val leader =
@@ -350,8 +495,12 @@ class PartyManager {
         partyMembers.clear()
 
         if (leader != null) {
+
             leader.isReady = false
-            partyMembers.add(leader)
+
+            partyMembers.add(
+                leader
+            )
         }
 
         pendingInvites.clear()
@@ -361,20 +510,19 @@ class PartyManager {
     // RESET
     // ============================================================
 
-    /**
-     * Completely resets the local party.
-     */
     fun reset() {
 
         partyMembers.clear()
+
         pendingInvites.clear()
 
         inviteCounter = 1
 
         partyMembers.add(
             Player(
-                id = "player_1",
-                name = "You",
+                id = localPlayerId,
+                name = localPlayerName,
+                profileId = localProfileId,
                 isLeader = true,
                 isReady = false
             )
