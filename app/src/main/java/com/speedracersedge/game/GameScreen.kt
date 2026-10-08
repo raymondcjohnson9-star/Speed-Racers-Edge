@@ -1,23 +1,11 @@
 package com.speedracersedge.game
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Path
-import android.graphics.LinearGradient
-import android.graphics.Shader
-import android.graphics.Typeface
+import android.graphics.*
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.TextView
-import kotlin.math.max
+import android.widget.*
 import kotlin.math.min
 
 class GameScreen(context: Context) : FrameLayout(context) {
@@ -31,138 +19,150 @@ class GameScreen(context: Context) : FrameLayout(context) {
     }
 
     private var currentScreen = Screen.LOADING
+
     private var loadingProgress = 0
     private var selectedMode = "ONLINE RACE"
     private var playerReady = false
     private var partyPlayers = 1
 
-    private val progressBar = ProgressBar(
-        context,
-        null,
-        android.R.attr.progressBarStyleHorizontal
-    )
+    private lateinit var progressBar: ProgressBar
+    private lateinit var loadingText: TextView
 
-    private val loadingText = TextView(context)
-    private val tapToStart = TextView(context)
+    private var backgroundView: RacingBackgroundView? = null
 
     init {
         setBackgroundColor(Color.rgb(3, 6, 14))
         showLoadingScreen()
+        animateLoading()
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // LOADING SCREEN
-    // ------------------------------------------------------------
+    // ============================================================
 
     private fun showLoadingScreen() {
+
         removeAllViews()
+
         currentScreen = Screen.LOADING
-        setBackgroundColor(Color.rgb(3, 6, 14))
 
         val background = RacingBackgroundView(context)
         background.showRoad = false
 
+        backgroundView = background
+
         addView(
             background,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
-        val darkOverlay = View(context)
-        darkOverlay.setBackgroundColor(Color.argb(120, 0, 0, 0))
+        val overlay = FrameLayout(context)
 
         addView(
-            darkOverlay,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+            overlay,
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
         val title = createText("SPEED RACERS EDGE")
-        title.textSize = 30f
-        title.typeface = Typeface.DEFAULT_BOLD
 
-        addView(
+        title.textSize = 27f
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD)
+        title.setSingleLine(true)
+        title.includeFontPadding = false
+        title.gravity = Gravity.CENTER
+        title.setTextColor(Color.WHITE)
+
+        val titleParams = frameParams(
+            420,
+            60,
+            Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        )
+
+        titleParams.topMargin = 90
+
+        overlay.addView(
             title,
-            frameParams(
-                360,
-                60,
-                Gravity.CENTER,
-                0,
-                -80,
-                0,
-                0
-            )
+            titleParams
         )
 
-        val subtitle = createText("LOADING GAME...")
-        subtitle.textSize = 14f
-        subtitle.setTextColor(Color.LTGRAY)
+        val subtitle = createText("THE ROAD HAS NO LIMIT")
 
-        addView(
+        subtitle.textSize = 13f
+        subtitle.setTextColor(Color.rgb(180, 205, 235))
+        subtitle.gravity = Gravity.CENTER
+
+        val subtitleParams = frameParams(
+            330,
+            40,
+            Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        )
+
+        subtitleParams.topMargin = 148
+
+        overlay.addView(
             subtitle,
-            frameParams(
-                300,
-                45,
-                Gravity.CENTER,
-                0,
-                0,
-                0,
-                0
-            )
+            subtitleParams
         )
 
-        // Bottom loading area.
-        val bottomLoading = LinearLayout(context)
-        bottomLoading.orientation = LinearLayout.VERTICAL
-        bottomLoading.setPadding(22, 0, 22, 22)
+        loadingText = createText("LOADING GAME...")
 
-        loadingText.text = "INITIALIZING GAME..."
-        loadingText.textSize = 13f
+        loadingText.textSize = 12f
         loadingText.setTextColor(Color.WHITE)
-        loadingText.gravity = Gravity.START
+        loadingText.gravity = Gravity.CENTER
 
-        bottomLoading.addView(
+        val loadingTextParams = frameParams(
+            300,
+            35,
+            Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        )
+
+        loadingTextParams.bottomMargin = 75
+
+        overlay.addView(
             loadingText,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                32
-            )
+            loadingTextParams
+        )
+
+        progressBar = ProgressBar(
+            context,
+            null,
+            android.R.attr.progressBarStyleHorizontal
         )
 
         progressBar.max = 100
         progressBar.progress = 0
 
-        bottomLoading.addView(
+        val progressParams = frameParams(
+            330,
+            7,
+            Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        )
+
+        progressParams.bottomMargin = 57
+
+        overlay.addView(
             progressBar,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                10
-            )
+            progressParams
         )
-
-        addView(
-            bottomLoading,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                70,
-                Gravity.BOTTOM
-            )
-        )
-
-        animateLoading()
     }
 
     private fun animateLoading() {
+
         loadingProgress = 0
-        progressBar.progress = 0
 
         val runnable = object : Runnable {
+
             override fun run() {
-                if (currentScreen != Screen.LOADING) return
+
+                if (currentScreen != Screen.LOADING) {
+                    return
+                }
 
                 loadingProgress = min(
                     loadingProgress + 1,
@@ -172,6 +172,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 progressBar.progress = loadingProgress
 
                 loadingText.text = when {
+
                     loadingProgress < 20 ->
                         "LOADING GAME..."
 
@@ -193,7 +194,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
                 if (loadingProgress < 100) {
 
-                    // 100 steps × 60ms = approximately 6 seconds.
                     postDelayed(
                         this,
                         60
@@ -201,15 +201,14 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
                 } else {
 
-                    // Hold at 100% briefly so the player
-                    // can actually see the loading complete.
-                    postDelayed({
-
-                        if (currentScreen == Screen.LOADING) {
-                            showTapToStart()
-                        }
-
-                    }, 250)
+                    postDelayed(
+                        {
+                            if (currentScreen == Screen.LOADING) {
+                                showTapToStart()
+                            }
+                        },
+                        250
+                    )
                 }
             }
         }
@@ -217,746 +216,715 @@ class GameScreen(context: Context) : FrameLayout(context) {
         post(runnable)
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // TAP TO START
-    // ------------------------------------------------------------
+    // ============================================================
 
     private fun showTapToStart() {
+
         removeAllViews()
+
         currentScreen = Screen.TAP_TO_START
-        setBackgroundColor(Color.rgb(3, 6, 14))
 
         val background = RacingBackgroundView(context)
+
         background.showRoad = true
+
+        backgroundView = background
 
         addView(
             background,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
-        val overlay = View(context)
-        overlay.setBackgroundColor(Color.argb(90, 0, 0, 0))
+        val overlay = FrameLayout(context)
 
         addView(
             overlay,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
         val title = createText("SPEED RACERS EDGE")
-        title.textSize = 34f
-        title.typeface = Typeface.DEFAULT_BOLD
 
-        addView(
+        title.textSize = 32f
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD)
+        title.setTextColor(Color.WHITE)
+        title.gravity = Gravity.CENTER
+
+        val titleParams = frameParams(
+            430,
+            70,
+            Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        )
+
+        titleParams.topMargin = 95
+
+        overlay.addView(
             title,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
+            titleParams
+        )
+
+        val subtitle = createText("RACE • ESCAPE • DOMINATE")
+
+        subtitle.textSize = 14f
+        subtitle.setTextColor(Color.rgb(180, 215, 255))
+        subtitle.gravity = Gravity.CENTER
+
+        val subtitleParams = frameParams(
+            350,
+            40,
+            Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        )
+
+        subtitleParams.topMargin = 165
+
+        overlay.addView(
+            subtitle,
+            subtitleParams
+        )
+
+        val tap = createText("TAP TO START")
+
+        tap.textSize = 17f
+        tap.setTypeface(Typeface.DEFAULT, Typeface.BOLD)
+        tap.setTextColor(Color.WHITE)
+        tap.gravity = Gravity.CENTER
+
+        val tapBackground = GradientDrawable()
+
+        tapBackground.setColor(
+            Color.argb(
+                160,
+                10,
+                25,
+                50
             )
         )
 
-        tapToStart.text = "TAP TO START"
-        tapToStart.textSize = 17f
-        tapToStart.setTextColor(Color.WHITE)
-        tapToStart.gravity = Gravity.CENTER
-        tapToStart.setPadding(30, 16, 30, 16)
-
-        tapToStart.setOnClickListener {
-            showLobby()
-        }
-
-        val tapParams = FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            65,
-            Gravity.BOTTOM
+        tapBackground.setStroke(
+            2,
+            Color.rgb(
+                50,
+                145,
+                255
+            )
         )
 
-        tapParams.bottomMargin = 20
+        tapBackground.cornerRadius = 22f
 
-        addView(
-            tapToStart,
+        tap.background = tapBackground
+
+        val tapParams = frameParams(
+            220,
+            55,
+            Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        )
+
+        tapParams.bottomMargin = 80
+
+        overlay.addView(
+            tap,
             tapParams
         )
+
+        tap.setOnClickListener {
+
+            showLobby()
+        }
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // LOBBY
-    // ------------------------------------------------------------
+    // ============================================================
 
     private fun showLobby() {
+
         removeAllViews()
+
         currentScreen = Screen.LOBBY
-        setBackgroundColor(Color.rgb(3, 6, 14))
 
         val background = RacingBackgroundView(context)
+
         background.showRoad = true
+
+        backgroundView = background
 
         addView(
             background,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
-        val overlay = View(context)
-        overlay.setBackgroundColor(Color.argb(105, 0, 0, 0))
+        val overlay = FrameLayout(context)
 
         addView(
             overlay,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        )
-
-        val profile = createButton("👤 PROFILE")
-
-        addView(
-            profile,
-            frameParams(
-                155,
-                55,
-                Gravity.TOP or Gravity.START,
-                18,
-                15,
-                0,
-                0
-            )
-        )
-
-        val coins = createText("🪙 12,450")
-        coins.textSize = 17f
-
-        addView(
-            coins,
-            frameParams(
-                150,
-                55,
-                Gravity.TOP or Gravity.START,
-                180,
-                15,
-                0,
-                0
-            )
-        )
-
-        val gems = createText("💎 320")
-        gems.textSize = 17f
-
-        addView(
-            gems,
-            frameParams(
-                120,
-                55,
-                Gravity.TOP or Gravity.END,
-                0,
-                15,
-                75,
-                0
-            )
-        )
-
-        val settings = createButton("⚙")
-        settings.textSize = 22f
-
-        addView(
-            settings,
-            frameParams(
-                60,
-                55,
-                Gravity.TOP or Gravity.END,
-                0,
-                15,
-                15,
-                0
-            )
-        )
-
-        val title = createText("SPEED RACERS EDGE")
-        title.textSize = 21f
-        title.typeface = Typeface.DEFAULT_BOLD
-
-        addView(
-            title,
-            frameParams(
-                330,
-                55,
-                Gravity.TOP or Gravity.CENTER_HORIZONTAL,
-                0,
-                15,
-                0,
-                0
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
         // --------------------------------------------------------
-        // GARAGE
+        // TOP LEFT PROFILE
+        // --------------------------------------------------------
+
+        val profile = createPanel()
+
+        val profileText = createText(
+            "ADAM\nRACER LV.1"
+        )
+
+        profileText.textSize = 12f
+        profileText.setTextColor(Color.WHITE)
+
+        profile.addView(
+            profileText,
+            FrameLayout.LayoutParams(
+                120,
+                55
+            )
+        )
+
+        val profileParams = frameParams(
+            145,
+            65,
+            Gravity.TOP or Gravity.START
+        )
+
+        profileParams.leftMargin = 18
+        profileParams.topMargin = 18
+
+        overlay.addView(
+            profile,
+            profileParams
+        )
+
+        // --------------------------------------------------------
+        // COINS
+        // --------------------------------------------------------
+
+        val coins = createText(
+            "🪙  2,500"
+        )
+
+        coins.textSize = 14f
+        coins.setTextColor(Color.rgb(255, 215, 80))
+        coins.gravity = Gravity.CENTER
+
+        val coinsParams = frameParams(
+            115,
+            45,
+            Gravity.TOP or Gravity.START
+        )
+
+        coinsParams.leftMargin = 170
+        coinsParams.topMargin = 20
+
+        overlay.addView(
+            coins,
+            coinsParams
+        )
+
+        // --------------------------------------------------------
+        // GEMS
+        // --------------------------------------------------------
+
+        val gems = createText(
+            "💎  120"
+        )
+
+        gems.textSize = 14f
+        gems.setTextColor(Color.rgb(90, 190, 255))
+        gems.gravity = Gravity.CENTER
+
+        val gemsParams = frameParams(
+            100,
+            45,
+            Gravity.TOP or Gravity.START
+        )
+
+        gemsParams.leftMargin = 275
+        gemsParams.topMargin = 20
+
+        overlay.addView(
+            gems,
+            gemsParams
+        )
+
+        // --------------------------------------------------------
+        // SETTINGS
+        // --------------------------------------------------------
+
+        val settings = createButton(
+            "⚙"
+        )
+
+        val settingsParams = frameParams(
+            55,
+            55,
+            Gravity.TOP or Gravity.END
+        )
+
+        settingsParams.rightMargin = 18
+        settingsParams.topMargin = 18
+
+        overlay.addView(
+            settings,
+            settingsParams
+        )
+
+        // --------------------------------------------------------
+        // GAME TITLE
+        // --------------------------------------------------------
+
+        val lobbyTitle = createText(
+            "SPEED RACERS EDGE"
+        )
+
+        lobbyTitle.textSize = 22f
+        lobbyTitle.setTypeface(
+            Typeface.DEFAULT,
+            Typeface.BOLD
+        )
+
+        lobbyTitle.setTextColor(Color.WHITE)
+        lobbyTitle.gravity = Gravity.CENTER
+
+        val titleParams = frameParams(
+            300,
+            45,
+            Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        )
+
+        titleParams.topMargin = 24
+
+        overlay.addView(
+            lobbyTitle,
+            titleParams
+        )
+
+        // --------------------------------------------------------
+        // CAR DISPLAY
         // --------------------------------------------------------
 
         val garage = createPanel()
 
-        val garageTitle = createText("YOUR GARAGE")
-        garageTitle.textSize = 18f
-        garageTitle.typeface = Typeface.DEFAULT_BOLD
-
-        garage.addView(
-            garageTitle,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                45
-            )
-        )
-
         val car = createText("🏎️")
-        car.textSize = 85f
+
+        car.textSize = 75f
+        car.gravity = Gravity.CENTER
 
         garage.addView(
             car,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                125
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
             )
         )
 
-        val carName = createText("YOUR RACING CAR")
-        carName.textSize = 15f
-        carName.typeface = Typeface.DEFAULT_BOLD
-
-        garage.addView(
-            carName,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                35
-            )
+        val garageParams = frameParams(
+            300,
+            180,
+            Gravity.CENTER
         )
 
-        val playerName = createText("PLAYER 1 • YOU")
-        playerName.textSize = 16f
+        garageParams.topMargin = -30
 
-        garage.addView(
-            playerName,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                35
-            )
-        )
-
-        addView(
+        overlay.addView(
             garage,
-            frameParams(
-                400,
-                270,
-                Gravity.CENTER,
-                0,
-                0,
-                0,
-                25
-            )
+            garageParams
         )
 
         // --------------------------------------------------------
-        // PARTY
+        // PARTY PANEL
         // --------------------------------------------------------
 
         val partyPanel = createPanel()
 
         val partyTitle = createText(
-            "YOUR PARTY  $partyPlayers/4"
+            "PARTY  $partyPlayers/4"
         )
 
-        partyTitle.textSize = 18f
-        partyTitle.typeface = Typeface.DEFAULT_BOLD
+        partyTitle.textSize = 14f
+        partyTitle.setTypeface(
+            Typeface.DEFAULT,
+            Typeface.BOLD
+        )
+
+        partyTitle.setTextColor(Color.WHITE)
+        partyTitle.gravity = Gravity.CENTER
 
         partyPanel.addView(
             partyTitle,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                45
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                35
             )
         )
 
-        addPartySlot(
-            partyPanel,
-            "YOU",
-            "PLAYER 1 • LEADER",
-            true
-        )
+        for (i in 0 until 4) {
 
-        for (i in 1 until 4) {
-            if (i < partyPlayers) {
-                addPartySlot(
-                    partyPanel,
-                    "PLAYER $i",
-                    "PARTY MEMBER",
-                    true
+            val slot = createText(
+                if (i == 0) {
+                    "YOU\nREADY"
+                } else if (i < partyPlayers) {
+                    "PLAYER ${i + 1}\nREADY"
+                } else {
+                    "+ INVITE"
+                }
+            )
+
+            slot.textSize = 10f
+            slot.gravity = Gravity.CENTER
+            slot.setTextColor(
+                if (i < partyPlayers) {
+                    Color.WHITE
+                } else {
+                    Color.rgb(120, 175, 220)
+                }
+            )
+
+            val slotBackground = GradientDrawable()
+
+            slotBackground.setColor(
+                Color.argb(
+                    130,
+                    8,
+                    20,
+                    40
                 )
-            } else {
-                addPartySlot(
-                    partyPanel,
-                    "EMPTY",
-                    "INVITE FRIEND",
-                    false
+            )
+
+            slotBackground.setStroke(
+                1,
+                Color.argb(
+                    160,
+                    60,
+                    140,
+                    220
                 )
+            )
+
+            slotBackground.cornerRadius = 10f
+
+            slot.background = slotBackground
+
+            val slotParams = FrameLayout.LayoutParams(
+                120,
+                58
+            )
+
+            slotParams.leftMargin =
+                12 + (i % 2) * 128
+
+            slotParams.topMargin =
+                45 + (i / 2) * 68
+
+            partyPanel.addView(
+                slot,
+                slotParams
+            )
+
+            if (i >= partyPlayers) {
+
+                slot.setOnClickListener {
+
+                    showFriends()
+                }
             }
         }
 
-        addView(
-            partyPanel,
-            frameParams(
-                285,
-                315,
-                Gravity.TOP or Gravity.END,
-                0,
-                85,
-                18,
-                0
-            )
+        val partyParams = frameParams(
+            270,
+            195,
+            Gravity.TOP or Gravity.END
         )
 
-        // --------------------------------------------------------
-        // FRIENDS
-        // --------------------------------------------------------
+        partyParams.rightMargin = 18
+        partyParams.topMargin = 105
 
-        val friends = createButton("👥 FRIENDS")
-
-        friends.setOnClickListener {
-            showFriendsPanel()
-        }
-
-        addView(
-            friends,
-            frameParams(
-                150,
-                55,
-                Gravity.BOTTOM or Gravity.END,
-                0,
-                0,
-                18,
-                95
-            )
+        overlay.addView(
+            partyPanel,
+            partyParams
         )
 
         // --------------------------------------------------------
         // SHOP
         // --------------------------------------------------------
 
-        val shop = createButton("🛒 SHOP")
+        val shop = createButton(
+            "SHOP"
+        )
 
-        addView(
+        val shopParams = frameParams(
+            120,
+            50,
+            Gravity.BOTTOM or Gravity.START
+        )
+
+        shopParams.leftMargin = 18
+        shopParams.bottomMargin = 20
+
+        overlay.addView(
             shop,
-            frameParams(
-                150,
-                60,
-                Gravity.BOTTOM or Gravity.START,
-                18,
-                0,
-                0,
-                18
-            )
+            shopParams
         )
 
-        // --------------------------------------------------------
-        // READY
-        // --------------------------------------------------------
+        shop.setOnClickListener {
 
-        val ready = createButton(
-            if (playerReady) "✓ READY" else "READY"
-        )
-
-        ready.setOnClickListener {
-            playerReady = !playerReady
-            showLobby()
+            Toast.makeText(
+                context,
+                "Shop coming soon",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
-        addView(
-            ready,
-            frameParams(
-                155,
-                60,
-                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,
-                -100,
-                0,
-                0,
-                18
-            )
-        )
-
         // --------------------------------------------------------
-        // MODE
+        // FRIENDS
         // --------------------------------------------------------
 
-        val selectMode = createButton(
-            "MODE: $selectedMode"
+        val friends = createButton(
+            "FRIENDS"
         )
 
-        selectMode.setOnClickListener {
+        val friendsParams = frameParams(
+            125,
+            50,
+            Gravity.BOTTOM or Gravity.START
+        )
+
+        friendsParams.leftMargin = 150
+        friendsParams.bottomMargin = 20
+
+        overlay.addView(
+            friends,
+            friendsParams
+        )
+
+        friends.setOnClickListener {
+
+            showFriends()
+        }
+
+        // --------------------------------------------------------
+        // SELECT MODE
+        // --------------------------------------------------------
+
+        val mode = createButton(
+            "SELECT MODE"
+        )
+
+        val modeParams = frameParams(
+            155,
+            55,
+            Gravity.BOTTOM or Gravity.END
+        )
+
+        modeParams.rightMargin = 18
+        modeParams.bottomMargin = 20
+
+        overlay.addView(
+            mode,
+            modeParams
+        )
+
+        mode.setOnClickListener {
+
             showModeMenu()
         }
-
-        addView(
-            selectMode,
-            frameParams(
-                210,
-                60,
-                Gravity.BOTTOM or Gravity.END,
-                0,
-                0,
-                18,
-                18
-            )
-        )
-
-        // --------------------------------------------------------
-        // START RACE
-        // --------------------------------------------------------
-
-        val startRace = createButton("START RACE")
-        startRace.textSize = 16f
-
-        startRace.setOnClickListener {
-            if (!playerReady) {
-                playerReady = true
-                showLobby()
-            } else {
-                showRaceStartingScreen()
-            }
-        }
-
-        addView(
-            startRace,
-            frameParams(
-                190,
-                60,
-                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,
-                100,
-                0,
-                0,
-                18
-            )
-        )
     }
 
-    // ------------------------------------------------------------
-    // PARTY SLOT
-    // ------------------------------------------------------------
+    // ============================================================
+    // FRIENDS
+    // ============================================================
 
-    private fun addPartySlot(
-        parent: LinearLayout,
-        name: String,
-        status: String,
-        occupied: Boolean
-    ) {
-        val slot = LinearLayout(context)
+    private fun showFriends() {
 
-        slot.orientation = LinearLayout.HORIZONTAL
-        slot.gravity = Gravity.CENTER_VERTICAL
-        slot.setPadding(8, 4, 8, 4)
-
-        val avatar = createText(
-            if (occupied) "👤" else "＋"
-        )
-
-        avatar.textSize = 22f
-
-        slot.addView(
-            avatar,
-            LinearLayout.LayoutParams(45, 55)
-        )
-
-        val info = LinearLayout(context)
-        info.orientation = LinearLayout.VERTICAL
-        info.gravity = Gravity.CENTER_VERTICAL
-
-        val nameText = createText(name)
-        nameText.textSize = 14f
-        nameText.gravity =
-            Gravity.START or Gravity.CENTER_VERTICAL
-
-        val statusText = createText(status)
-        statusText.textSize = 11f
-        statusText.gravity =
-            Gravity.START or Gravity.CENTER_VERTICAL
-
-        statusText.setTextColor(Color.LTGRAY)
-
-        info.addView(
-            nameText,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                25
-            )
-        )
-
-        info.addView(
-            statusText,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                22
-            )
-        )
-
-        slot.addView(
-            info,
-            LinearLayout.LayoutParams(
-                0,
-                55,
-                1f
-            )
-        )
-
-        if (!occupied) {
-            val invite = createButton("INVITE")
-            invite.textSize = 10f
-
-            invite.setOnClickListener {
-                showFriendsPanel()
-            }
-
-            slot.addView(
-                invite,
-                LinearLayout.LayoutParams(
-                    75,
-                    45
-                )
-            )
-        }
-
-        parent.addView(
-            slot,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                60
-            )
-        )
-    }
-
-    // ------------------------------------------------------------
-    // FRIENDS PANEL
-    // ------------------------------------------------------------
-
-    private fun showFriendsPanel() {
         val overlay = FrameLayout(context)
 
-        overlay.setBackgroundColor(
-            Color.argb(
-                235,
-                3,
-                6,
-                12
+        addView(
+            overlay,
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
         val panel = createPanel()
 
-        val title = createText("INVITE FRIENDS")
-        title.textSize = 24f
-        title.typeface = Typeface.DEFAULT_BOLD
+        val title = createText(
+            "FRIENDS"
+        )
+
+        title.textSize = 18f
+        title.setTypeface(
+            Typeface.DEFAULT,
+            Typeface.BOLD
+        )
+
+        title.setTextColor(Color.WHITE)
+        title.gravity = Gravity.CENTER
 
         panel.addView(
             title,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                60
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                50
             )
         )
 
-        addFriend(
-            panel,
-            "Alex",
-            "ONLINE",
-            overlay
+        val friends = arrayOf(
+            "ALEX        ONLINE",
+            "MIKE        ONLINE",
+            "JOHN        OFFLINE"
         )
 
-        addFriend(
-            panel,
-            "Mike",
-            "ONLINE",
-            overlay
-        )
+        for (i in friends.indices) {
 
-        addFriend(
-            panel,
-            "John",
-            "OFFLINE",
-            overlay
-        )
+            val friend = createButton(
+                friends[i]
+            )
 
-        val close = createButton("CLOSE")
+            val friendParams = FrameLayout.LayoutParams(
+                260,
+                55
+            )
 
-        close.setOnClickListener {
-            removeView(overlay)
+            friendParams.leftMargin = 20
+            friendParams.topMargin =
+                60 + i * 65
+
+            panel.addView(
+                friend,
+                friendParams
+            )
+
+            if (i < 2) {
+
+                friend.setOnClickListener {
+
+                    if (partyPlayers < 4) {
+
+                        partyPlayers++
+
+                        Toast.makeText(
+                            context,
+                            "Friend invited to party",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        removeView(overlay)
+
+                        showLobby()
+                    }
+                }
+            }
         }
+
+        val close = createButton(
+            "CLOSE"
+        )
+
+        val closeParams = FrameLayout.LayoutParams(
+            260,
+            50
+        )
+
+        closeParams.leftMargin = 20
+        closeParams.topMargin = 270
 
         panel.addView(
             close,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                55
-            )
+            closeParams
+        )
+
+        close.setOnClickListener {
+
+            removeView(overlay)
+        }
+
+        val panelParams = frameParams(
+            300,
+            335,
+            Gravity.CENTER
         )
 
         overlay.addView(
             panel,
-            FrameLayout.LayoutParams(
-                380,
-                330,
-                Gravity.CENTER
-            )
-        )
-
-        addView(
-            overlay,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
+            panelParams
         )
     }
 
-    private fun addFriend(
-        parent: LinearLayout,
-        name: String,
-        status: String,
-        overlay: FrameLayout
-    ) {
-        val row = LinearLayout(context)
-
-        row.orientation = LinearLayout.HORIZONTAL
-        row.gravity = Gravity.CENTER_VERTICAL
-        row.setPadding(10, 5, 10, 5)
-
-        val info = LinearLayout(context)
-        info.orientation = LinearLayout.VERTICAL
-
-        val nameText = createText(name)
-        nameText.textSize = 16f
-        nameText.typeface = Typeface.DEFAULT_BOLD
-        nameText.gravity = Gravity.START
-
-        val statusText = createText(status)
-        statusText.textSize = 12f
-        statusText.gravity = Gravity.START
-
-        statusText.setTextColor(
-            if (status == "ONLINE") {
-                Color.GREEN
-            } else {
-                Color.GRAY
-            }
-        )
-
-        info.addView(
-            nameText,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                30
-            )
-        )
-
-        info.addView(
-            statusText,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                25
-            )
-        )
-
-        row.addView(
-            info,
-            LinearLayout.LayoutParams(
-                0,
-                60,
-                1f
-            )
-        )
-
-        if (status == "ONLINE") {
-            val invite = createButton("INVITE")
-            invite.textSize = 11f
-
-            invite.setOnClickListener {
-                if (partyPlayers < 4) {
-                    partyPlayers += 1
-                    removeView(overlay)
-                    showLobby()
-                }
-            }
-
-            row.addView(
-                invite,
-                LinearLayout.LayoutParams(
-                    85,
-                    45
-                )
-            )
-        }
-
-        parent.addView(
-            row,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                65
-            )
-        )
-    }
-
-    // ------------------------------------------------------------
+    // ============================================================
     // MODE MENU
-    // ------------------------------------------------------------
+    // ============================================================
 
     private fun showModeMenu() {
+
         removeAllViews()
+
         currentScreen = Screen.MODE_MENU
-        setBackgroundColor(Color.rgb(3, 6, 14))
 
         val background = RacingBackgroundView(context)
+
         background.showRoad = true
+
+        backgroundView = background
 
         addView(
             background,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
-        val overlay = View(context)
-        overlay.setBackgroundColor(Color.argb(120, 0, 0, 0))
+        val overlay = FrameLayout(context)
 
         addView(
             overlay,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
-        val container = LinearLayout(context)
+        val title = createText(
+            "SELECT MODE"
+        )
 
-        container.orientation = LinearLayout.VERTICAL
-        container.gravity = Gravity.CENTER
-        container.setPadding(35, 35, 35, 35)
+        title.textSize = 25f
+        title.setTypeface(
+            Typeface.DEFAULT,
+            Typeface.BOLD
+        )
 
-        val title = createText("SELECT MODE")
-        title.textSize = 28f
-        title.typeface = Typeface.DEFAULT_BOLD
+        title.setTextColor(Color.WHITE)
+        title.gravity = Gravity.CENTER
 
-        container.addView(
+        val titleParams = frameParams(
+            300,
+            55,
+            Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        )
+
+        titleParams.topMargin = 60
+
+        overlay.addView(
             title,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                60
-            )
+            titleParams
         )
 
-        val modes = listOf(
+        val modes = arrayOf(
             "QUICK RACE",
             "ONLINE RACE",
             "HEIST",
@@ -964,245 +932,336 @@ class GameScreen(context: Context) : FrameLayout(context) {
             "SPECIAL EVENTS"
         )
 
-        for (mode in modes) {
-            val button = createButton(mode)
-            button.textSize = 15f
+        for (i in modes.indices) {
 
-            button.setOnClickListener {
-                selectedMode = mode
-                showLobby()
-            }
-
-            val params = LinearLayout.LayoutParams(
-                300,
-                55
+            val button = createButton(
+                modes[i]
             )
 
-            params.topMargin = 10
-            params.bottomMargin = 10
+            val params = frameParams(
+                280,
+                55,
+                Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            )
 
-            container.addView(
+            params.topMargin =
+                135 + i * 65
+
+            overlay.addView(
                 button,
                 params
             )
+
+            button.setOnClickListener {
+
+                selectedMode = modes[i]
+
+                if (
+                    selectedMode == "ONLINE RACE" ||
+                    selectedMode == "QUICK RACE"
+                ) {
+
+                    showRaceStarting()
+
+                } else {
+
+                    Toast.makeText(
+                        context,
+                        "$selectedMode selected",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
 
-        val back = createButton("BACK TO LOBBY")
-
-        back.setOnClickListener {
-            showLobby()
-        }
-
-        val backParams = LinearLayout.LayoutParams(
-            300,
-            55
+        val back = createButton(
+            "BACK"
         )
 
-        backParams.topMargin = 20
+        val backParams = frameParams(
+            130,
+            50,
+            Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        )
 
-        container.addView(
+        backParams.bottomMargin = 25
+
+        overlay.addView(
             back,
             backParams
         )
 
-        addView(
-            container,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-            )
-        )
+        back.setOnClickListener {
+
+            showLobby()
+        }
     }
 
-    // ------------------------------------------------------------
-    // MATCH READY
-    // ------------------------------------------------------------
+    // ============================================================
+    // RACE STARTING
+    // ============================================================
 
-    private fun showRaceStartingScreen() {
+    private fun showRaceStarting() {
+
         removeAllViews()
+
         currentScreen = Screen.RACE_STARTING
-        setBackgroundColor(Color.rgb(3, 6, 12))
 
         val background = RacingBackgroundView(context)
+
         background.showRoad = true
 
         addView(
             background,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
-        val overlay = View(context)
-        overlay.setBackgroundColor(Color.argb(125, 0, 0, 0))
+        val overlay = FrameLayout(context)
 
         addView(
             overlay,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
             )
         )
 
-        val container = LinearLayout(context)
+        val title = createText(
+            selectedMode
+        )
 
-        container.orientation = LinearLayout.VERTICAL
-        container.gravity = Gravity.CENTER
-        container.setPadding(30, 30, 30, 30)
+        title.textSize = 25f
+        title.setTypeface(
+            Typeface.DEFAULT,
+            Typeface.BOLD
+        )
 
-        val title = createText("MATCH READY")
-        title.textSize = 30f
-        title.typeface = Typeface.DEFAULT_BOLD
+        title.setTextColor(Color.WHITE)
+        title.gravity = Gravity.CENTER
 
-        container.addView(
+        val titleParams = frameParams(
+            350,
+            55,
+            Gravity.CENTER
+        )
+
+        titleParams.topMargin = -100
+
+        overlay.addView(
             title,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                60
+            titleParams
+        )
+
+        val players = createText(
+            "PLAYERS READY: $partyPlayers/4"
+        )
+
+        players.textSize = 15f
+        players.setTextColor(
+            Color.rgb(
+                160,
+                210,
+                255
             )
         )
 
-        val modeText = createText(selectedMode)
-        modeText.textSize = 20f
-        modeText.typeface = Typeface.DEFAULT_BOLD
+        players.gravity = Gravity.CENTER
 
-        container.addView(
-            modeText,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                50
-            )
+        val playersParams = frameParams(
+            300,
+            45,
+            Gravity.CENTER
         )
 
-        val playersText = createText(
-            "PLAYERS: $partyPlayers/4"
+        overlay.addView(
+            players,
+            playersParams
         )
 
-        playersText.textSize = 17f
-
-        container.addView(
-            playersText,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                45
-            )
+        val ready = createButton(
+            if (playerReady) {
+                "READY"
+            } else {
+                "READY UP"
+            }
         )
 
-        val status = createText("GET READY...")
-        status.textSize = 22f
-        status.typeface = Typeface.DEFAULT_BOLD
-
-        container.addView(
-            status,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                55
-            )
+        val readyParams = frameParams(
+            190,
+            55,
+            Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         )
 
-        val back = createButton("BACK TO LOBBY")
+        readyParams.bottomMargin = 80
 
-        back.setOnClickListener {
-            showLobby()
+        overlay.addView(
+            ready,
+            readyParams
+        )
+
+        ready.setOnClickListener {
+
+            playerReady = !playerReady
+
+            ready.text =
+                if (playerReady) {
+                    "READY"
+                } else {
+                    "READY UP"
+                }
         }
 
-        val backParams = LinearLayout.LayoutParams(
-            220,
-            55
+        val back = createButton(
+            "BACK"
         )
 
-        backParams.topMargin = 30
+        val backParams = frameParams(
+            120,
+            45,
+            Gravity.BOTTOM or Gravity.START
+        )
 
-        container.addView(
+        backParams.leftMargin = 18
+        backParams.bottomMargin = 20
+
+        overlay.addView(
             back,
             backParams
         )
 
-        addView(
-            container,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-            )
-        )
+        back.setOnClickListener {
+
+            showLobby()
+        }
     }
 
-    // ------------------------------------------------------------
+    // ============================================================
     // UI HELPERS
-    // ------------------------------------------------------------
+    // ============================================================
 
-    private fun createPanel(): LinearLayout {
-        val panel = LinearLayout(context)
+    private fun createPanel(): FrameLayout {
 
-        panel.orientation = LinearLayout.VERTICAL
-        panel.gravity = Gravity.CENTER
-        panel.setPadding(15, 15, 15, 15)
+        val panel = FrameLayout(context)
 
-        panel.background = roundedBackground(
+        val background = GradientDrawable()
+
+        background.setColor(
             Color.argb(
-                225,
-                12,
-                20,
-                38
-            ),
-            22
+                180,
+                5,
+                15,
+                30
+            )
+        )
+
+        background.setStroke(
+            1,
+            Color.argb(
+                160,
+                70,
+                145,
+                220
+            )
+        )
+
+        background.cornerRadius = 18f
+
+        panel.background = background
+
+        panel.setPadding(
+            10,
+            8,
+            10,
+            8
         )
 
         return panel
     }
 
-    private fun createText(text: String): TextView {
+    private fun createText(
+        text: String
+    ): TextView {
+
         val view = TextView(context)
 
         view.text = text
+
         view.setTextColor(Color.WHITE)
-        view.gravity = Gravity.CENTER
-        view.textSize = 16f
+
+        view.gravity =
+            Gravity.CENTER_VERTICAL
 
         return view
     }
 
-    private fun createButton(text: String): Button {
-        val button = Button(context)
+    private fun createButton(
+        text: String
+    ): TextView {
+
+        val button = TextView(context)
 
         button.text = text
-        button.setTextColor(Color.WHITE)
-        button.textSize = 13f
-        button.isAllCaps = false
 
-        button.background = roundedBackground(
-            Color.rgb(
-                20,
-                38,
-                68
-            ),
-            18
+        button.textSize = 13f
+
+        button.setTypeface(
+            Typeface.DEFAULT,
+            Typeface.BOLD
         )
+
+        button.setTextColor(Color.WHITE)
+
+        button.gravity = Gravity.CENTER
+
+        val background = GradientDrawable()
+
+        background.setColor(
+            Color.argb(
+                190,
+                8,
+                24,
+                48
+            )
+        )
+
+        background.setStroke(
+            2,
+            Color.argb(
+                190,
+                55,
+                145,
+                255
+            )
+        )
+
+        background.cornerRadius = 16f
+
+        button.background = background
+
+        button.isClickable = true
 
         return button
     }
 
     private fun roundedBackground(
         color: Int,
-        radius: Int
+        strokeColor: Int,
+        radius: Float = 16f
     ): GradientDrawable {
+
         val drawable = GradientDrawable()
 
         drawable.setColor(color)
-        drawable.cornerRadius = radius.toFloat()
 
         drawable.setStroke(
-            1,
-            Color.argb(
-                100,
-                255,
-                255,
-                255
-            )
+            2,
+            strokeColor
         )
+
+        drawable.cornerRadius = radius
 
         return drawable
     }
@@ -1210,424 +1269,796 @@ class GameScreen(context: Context) : FrameLayout(context) {
     private fun frameParams(
         width: Int,
         height: Int,
-        gravity: Int,
-        left: Int,
-        top: Int,
-        right: Int,
-        bottom: Int
+        gravity: Int
     ): FrameLayout.LayoutParams {
 
-        val params = FrameLayout.LayoutParams(
-            width,
-            height
-        )
+        val params =
+            FrameLayout.LayoutParams(
+                width,
+                height
+            )
 
         params.gravity = gravity
-        params.leftMargin = left
-        params.topMargin = top
-        params.rightMargin = right
-        params.bottomMargin = bottom
 
         return params
     }
 
     // ============================================================
-    // CINEMATIC RACING BACKGROUND
+    // BRIDGE / CITY / WATER BACKGROUND
     // ============================================================
 
     private class RacingBackgroundView(
         context: Context
     ) : View(context) {
 
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val roadPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val paint =
+            Paint(Paint.ANTI_ALIAS_FLAG)
+
+        private val roadPaint =
+            Paint(Paint.ANTI_ALIAS_FLAG)
+
+        private val glowPaint =
+            Paint(Paint.ANTI_ALIAS_FLAG)
+
+        private val linePaint =
+            Paint(Paint.ANTI_ALIAS_FLAG)
+
+        private val waterPaint =
+            Paint(Paint.ANTI_ALIAS_FLAG)
 
         var showRoad = true
 
         private var animationOffset = 0f
 
         init {
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
 
-            post(object : Runnable {
-                override fun run() {
-                    animationOffset += 2.5f
+            setLayerType(
+                View.LAYER_TYPE_SOFTWARE,
+                null
+            )
 
-                    if (animationOffset > 80f) {
-                        animationOffset = 0f
+            post(
+                object : Runnable {
+
+                    override fun run() {
+
+                        animationOffset += 2.8f
+
+                        if (animationOffset > 100f) {
+                            animationOffset = 0f
+                        }
+
+                        invalidate()
+
+                        postDelayed(
+                            this,
+                            35
+                        )
                     }
-
-                    invalidate()
-                    postDelayed(this, 35)
                 }
-            })
+            )
         }
 
-        override fun onDraw(canvas: Canvas) {
+        override fun onDraw(
+            canvas: Canvas
+        ) {
+
             super.onDraw(canvas)
 
             val w = width.toFloat()
             val h = height.toFloat()
 
-            if (w <= 0f || h <= 0f) return
+            if (w <= 0f || h <= 0f) {
+                return
+            }
 
-            // ----------------------------------------------------
-            // NIGHT SKY
-            // ----------------------------------------------------
+            // BRIGHT NIGHT SKY
 
-            paint.shader = LinearGradient(
-                0f,
-                0f,
-                0f,
-                h,
-                Color.rgb(2, 5, 15),
-                Color.rgb(7, 13, 28),
-                Shader.TileMode.CLAMP
-            )
+            paint.shader =
+                LinearGradient(
+                    0f,
+                    0f,
+                    0f,
+                    h * 0.65f,
+                    Color.rgb(
+                        8,
+                        22,
+                        48
+                    ),
+                    Color.rgb(
+                        20,
+                        48,
+                        82
+                    ),
+                    Shader.TileMode.CLAMP
+                )
 
             canvas.drawRect(
                 0f,
                 0f,
                 w,
-                h,
+                h * 0.68f,
                 paint
             )
 
             paint.shader = null
 
-            // ----------------------------------------------------
-            // RED / BLUE CITY GLOW
-            // ----------------------------------------------------
+            // CITY GLOW
 
-            glowPaint.shader = LinearGradient(
-                0f,
-                0f,
-                w,
-                0f,
-                Color.argb(0, 0, 70, 255),
-                Color.argb(90, 255, 20, 50),
-                Shader.TileMode.CLAMP
-            )
-
-            canvas.drawRect(
-                0f,
-                0f,
-                w,
-                h * 0.72f,
-                glowPaint
-            )
-
-            glowPaint.shader = LinearGradient(
-                w,
-                0f,
-                0f,
-                0f,
-                Color.argb(0, 255, 20, 40),
-                Color.argb(75, 0, 90, 255),
-                Shader.TileMode.CLAMP
-            )
+            glowPaint.shader =
+                LinearGradient(
+                    0f,
+                    h * 0.15f,
+                    w,
+                    h * 0.55f,
+                    Color.argb(
+                        80,
+                        30,
+                        130,
+                        255
+                    ),
+                    Color.argb(
+                        110,
+                        255,
+                        50,
+                        65
+                    ),
+                    Shader.TileMode.CLAMP
+                )
 
             canvas.drawRect(
                 0f,
                 0f,
                 w,
-                h * 0.72f,
+                h * 0.65f,
                 glowPaint
             )
 
             glowPaint.shader = null
 
-            // ----------------------------------------------------
-            // DISTANT CITY LIGHTS
-            // ----------------------------------------------------
+                       glowPaint.shader = null
 
-            paint.style = Paint.Style.FILL
+            // ====================================================
+            // DISTANT CITY
+            // ====================================================
 
-            val buildingTop = h * 0.38f
+            val cityBase = h * 0.53f
 
             var x = 0f
+            var buildingIndex = 0
 
             while (x < w) {
-                val buildingWidth = max(
-                    22f,
-                    w * 0.035f
-                )
 
-                val seed = ((x / buildingWidth).toInt() % 5)
+                val buildingWidth =
+                    when (buildingIndex % 4) {
+                        0 -> 34f
+                        1 -> 48f
+                        2 -> 28f
+                        else -> 60f
+                    }
 
-                val buildingExtra = when (seed) {
-                    0 -> 35f
-                    1 -> 65f
-                    2 -> 15f
-                    3 -> 50f
-                    else -> 80f
-                }
+                val buildingHeight =
+                    when (buildingIndex % 5) {
+                        0 -> h * 0.20f
+                        1 -> h * 0.29f
+                        2 -> h * 0.16f
+                        3 -> h * 0.25f
+                        else -> h * 0.34f
+                    }
 
-                paint.color = Color.rgb(
-                    5,
-                    10,
-                    22
-                )
+                val top =
+                    cityBase - buildingHeight
+
+                paint.color =
+                    when (buildingIndex % 3) {
+                        0 ->
+                            Color.rgb(
+                                13,
+                                28,
+                                52
+                            )
+
+                        1 ->
+                            Color.rgb(
+                                18,
+                                34,
+                                60
+                            )
+
+                        else ->
+                            Color.rgb(
+                                10,
+                                25,
+                                48
+                            )
+                    }
 
                 canvas.drawRect(
                     x,
-                    buildingTop - buildingExtra,
+                    top,
                     x + buildingWidth,
-                    h * 0.58f,
+                    cityBase,
                     paint
                 )
 
-                var wy = buildingTop - buildingExtra + 12f
+                // Rooftop light
 
-                while (wy < h * 0.55f) {
-                    if (((wy.toInt() + x.toInt()) % 3) != 0) {
-                        paint.color = if (
-                            ((x.toInt() + wy.toInt()) % 2) == 0
+                paint.color =
+                    Color.argb(
+                        210,
+                        255,
+                        55,
+                        65
+                    )
+
+                canvas.drawRect(
+                    x + buildingWidth * 0.25f,
+                    top - 4f,
+                    x + buildingWidth * 0.75f,
+                    top,
+                    paint
+                )
+
+                // Building windows
+
+                var wy = top + 12f
+
+                while (wy < cityBase - 8f) {
+
+                    var wx = x + 7f
+
+                    while (
+                        wx <
+                        x + buildingWidth - 6f
+                    ) {
+
+                        if (
+                            (
+                                wx.toInt() +
+                                    wy.toInt() +
+                                    buildingIndex
+                            ) % 4 != 0
                         ) {
-                            Color.argb(
-                                150,
-                                40,
-                                120,
-                                255
-                            )
-                        } else {
-                            Color.argb(
-                                130,
-                                255,
-                                45,
-                                55
+
+                            paint.color =
+                                if (
+                                    (
+                                        buildingIndex +
+                                            wx.toInt()
+                                    ) % 3 == 0
+                                ) {
+
+                                    Color.argb(
+                                        230,
+                                        255,
+                                        190,
+                                        75
+                                    )
+
+                                } else {
+
+                                    Color.argb(
+                                        210,
+                                        70,
+                                        170,
+                                        255
+                                    )
+                                }
+
+                            canvas.drawRect(
+                                wx,
+                                wy,
+                                wx + 5f,
+                                wy + 4f,
+                                paint
                             )
                         }
 
-                        canvas.drawRect(
-                            x + 7f,
-                            wy,
-                            x + 11f,
-                            wy + 3f,
-                            paint
-                        )
+                        wx += 12f
                     }
 
                     wy += 15f
                 }
 
-                x += buildingWidth + 3f
+                x += buildingWidth + 5f
+                buildingIndex++
             }
 
+            // ====================================================
+            // WATER-ONLY BACKGROUND
+            // ====================================================
+
             if (!showRoad) {
+
+                drawWater(
+                    canvas,
+                    w,
+                    h,
+                    cityBase
+                )
+
                 return
             }
 
-            // ----------------------------------------------------
-            // ROAD
-            // ----------------------------------------------------
+            // ====================================================
+            // WATER ON BOTH SIDES OF THE BRIDGE
+            // ====================================================
 
-            val horizonY = h * 0.52f
-            val roadBottom = h * 1.08f
-            val roadTopWidth = w * 0.10f
-            val roadBottomWidth = w * 0.95f
+            val horizonY = h * 0.54f
 
-            roadPaint.style = Paint.Style.FILL
-            roadPaint.color = Color.rgb(
-                8,
-                10,
-                17
+            waterPaint.shader =
+                LinearGradient(
+                    0f,
+                    horizonY,
+                    0f,
+                    h,
+                    Color.rgb(
+                        18,
+                        65,
+                        105
+                    ),
+                    Color.rgb(
+                        4,
+                        25,
+                        48
+                    ),
+                    Shader.TileMode.CLAMP
+                )
+
+            // Left side water
+
+            canvas.drawRect(
+                0f,
+                horizonY,
+                w * 0.38f,
+                h,
+                waterPaint
             )
 
-            val road = Path()
+            // Right side water
 
-            road.moveTo(
-                w / 2f - roadTopWidth,
+            canvas.drawRect(
+                w * 0.62f,
+                horizonY,
+                w,
+                h,
+                waterPaint
+            )
+
+            waterPaint.shader = null
+
+            // ====================================================
+            // WATER REFLECTIONS
+            // ====================================================
+
+            for (i in 0 until 18) {
+
+                val reflectionY =
+                    horizonY +
+                        12f +
+                        i * 22f
+
+                val reflectionWidth =
+                    20f +
+                        i * 7f
+
+                paint.color =
+                    if (i % 2 == 0) {
+
+                        Color.argb(
+                            110,
+                            50,
+                            150,
+                            255
+                        )
+
+                    } else {
+
+                        Color.argb(
+                            90,
+                            255,
+                            70,
+                            80
+                        )
+                    }
+
+                // Left reflection
+
+                canvas.drawRect(
+                    w * 0.12f -
+                        reflectionWidth,
+                    reflectionY,
+                    w * 0.12f +
+                        reflectionWidth,
+                    reflectionY + 3f,
+                    paint
+                )
+
+                // Right reflection
+
+                canvas.drawRect(
+                    w * 0.88f -
+                        reflectionWidth,
+                    reflectionY,
+                    w * 0.88f +
+                        reflectionWidth,
+                    reflectionY + 3f,
+                    paint
+                )
+            }
+
+            // ====================================================
+            // BRIDGE
+            // ====================================================
+
+            val roadTopWidth =
+                w * 0.095f
+
+            val roadBottomWidth =
+                w * 0.83f
+
+            val roadBottom =
+                h * 1.08f
+
+            roadPaint.style =
+                Paint.Style.FILL
+
+            roadPaint.color =
+                Color.rgb(
+                    24,
+                    29,
+                    39
+                )
+
+            val bridge = Path()
+
+            // Top-left
+
+            bridge.moveTo(
+                w / 2f -
+                    roadTopWidth,
                 horizonY
             )
 
-            road.lineTo(
-                w / 2f + roadTopWidth,
+            // Top-right
+
+            bridge.lineTo(
+                w / 2f +
+                    roadTopWidth,
                 horizonY
             )
 
-            road.lineTo(
-                w / 2f + roadBottomWidth,
+            // Bottom-right
+
+            bridge.lineTo(
+                w / 2f +
+                    roadBottomWidth,
                 roadBottom
             )
 
-            road.lineTo(
-                w / 2f - roadBottomWidth,
+            // Bottom-left
+
+            bridge.lineTo(
+                w / 2f -
+                    roadBottomWidth,
                 roadBottom
             )
 
-            road.close()
+            bridge.close()
 
             canvas.drawPath(
-                road,
+                bridge,
                 roadPaint
             )
 
-            // ----------------------------------------------------
-            // ROAD EDGE GLOW
-            // ----------------------------------------------------
+            // ====================================================
+            // BRIDGE RAILINGS
+            // ====================================================
 
-            linePaint.style = Paint.Style.STROKE
-            linePaint.strokeWidth = 4f
+            linePaint.style =
+                Paint.Style.STROKE
 
-            linePaint.color = Color.argb(
-                210,
-                20,
-                100,
-                255
-            )
+            linePaint.strokeWidth = 5f
 
-            canvas.drawLine(
-                w / 2f - roadTopWidth,
-                horizonY,
-                w / 2f - roadBottomWidth,
-                roadBottom,
-                linePaint
-            )
+            // Blue left railing
 
-            linePaint.color = Color.argb(
-                210,
-                255,
-                35,
-                50
-            )
-
-            canvas.drawLine(
-                w / 2f + roadTopWidth,
-                horizonY,
-                w / 2f + roadBottomWidth,
-                roadBottom,
-                linePaint
-            )
-
-            // ----------------------------------------------------
-            // CENTER ROAD MARKINGS
-            // ----------------------------------------------------
-
-            val centerX = w / 2f
-
-            for (i in 0 until 8) {
-                val depth = i / 8f
-                val nextDepth = (i + 0.45f) / 8f
-
-                val y1 = horizonY +
-                    (roadBottom - horizonY) *
-                    depth
-
-                val y2 = horizonY +
-                    (roadBottom - horizonY) *
-                    min(nextDepth, 1f)
-
-                val halfWidth1 =
-                    3f + depth * 13f
-
-                linePaint.color = Color.argb(
-                    210,
-                    225,
-                    225,
-                    225
+            linePaint.color =
+                Color.argb(
+                    230,
+                    70,
+                    155,
+                    255
                 )
 
+            canvas.drawLine(
+                w / 2f -
+                    roadTopWidth,
+                horizonY,
+                w / 2f -
+                    roadBottomWidth,
+                roadBottom,
+                linePaint
+            )
+
+            // Red right railing
+
+            linePaint.color =
+                Color.argb(
+                    230,
+                    255,
+                    65,
+                    75
+                )
+
+            canvas.drawLine(
+                w / 2f +
+                    roadTopWidth,
+                horizonY,
+                w / 2f +
+                    roadBottomWidth,
+                roadBottom,
+                linePaint
+            )
+
+            // ====================================================
+            // BRIDGE LIGHT POSTS
+            // ====================================================
+
+            for (i in 0 until 12) {
+
+                val depth =
+                    (
+                        (
+                            i +
+                                animationOffset /
+                                100f
+                        ) % 12
+                    ) / 12f
+
+                val y =
+                    horizonY +
+                        (
+                            roadBottom -
+                                horizonY
+                        ) * depth
+
+                val roadHalfWidth =
+                    roadTopWidth +
+                        (
+                            roadBottomWidth -
+                                roadTopWidth
+                        ) * depth
+
+                val leftX =
+                    w / 2f -
+                        roadHalfWidth *
+                        0.82f
+
+                val rightX =
+                    w / 2f +
+                        roadHalfWidth *
+                        0.82f
+
+                paint.color =
+                    Color.argb(
+                        220,
+                        170,
+                        220,
+                        255
+                    )
+
+                // Left light
+
+                canvas.drawCircle(
+                    leftX,
+                    y,
+                    3f +
+                        depth * 4f,
+                    paint
+                )
+
+                // Right light
+
+                canvas.drawCircle(
+                    rightX,
+                    y,
+                    3f +
+                        depth * 4f,
+                    paint
+                )
+            }
+
+            // ====================================================
+            // CENTER ROAD MARKINGS
+            // ====================================================
+
+            val centerX =
+                w / 2f
+
+            for (i in 0 until 9) {
+
+                val depth =
+                    i / 9f
+
+                val nextDepth =
+                    (i + 0.42f) / 9f
+
+                val y1 =
+                    horizonY +
+                        (
+                            roadBottom -
+                                horizonY
+                        ) * depth
+
+                val y2 =
+                    horizonY +
+                        (
+                            roadBottom -
+                                horizonY
+                        ) *
+                        min(
+                            nextDepth,
+                            1f
+                        )
+
+                val halfWidth =
+                    3f +
+                        depth * 14f
+
+                linePaint.color =
+                    Color.argb(
+                        235,
+                        245,
+                        245,
+                        245
+                    )
+
                 linePaint.strokeWidth =
-                    2f + depth * 4f
+                    2f +
+                        depth * 4f
 
                 canvas.drawLine(
-                    centerX - halfWidth1,
+                    centerX -
+                        halfWidth,
                     y1,
-                    centerX + halfWidth1,
+                    centerX +
+                        halfWidth,
                     y2,
                     linePaint
                 )
             }
 
-            // ----------------------------------------------------
-            // SPEED LIGHTS
-            // ----------------------------------------------------
+            // ====================================================
+            // MOVING CITY / ROAD LIGHTS
+            // ====================================================
 
-            for (i in 0 until 14) {
+            for (i in 0 until 16) {
+
                 val normalized =
-                    ((i * 0.19f) +
-                        animationOffset / 1000f) % 1f
+                    (
+                        (
+                            i * 0.18f
+                        ) +
+                            animationOffset /
+                            1000f
+                    ) % 1f
 
                 val y =
                     horizonY +
-                        (roadBottom - horizonY) *
-                        normalized
+                        (
+                            roadBottom -
+                                horizonY
+                        ) * normalized
 
                 val roadHalfWidth =
                     roadTopWidth +
-                        (roadBottomWidth - roadTopWidth) *
-                        normalized
+                        (
+                            roadBottomWidth -
+                                roadTopWidth
+                        ) * normalized
 
                 val sideOffset =
-                    roadHalfWidth * 0.72f
+                    roadHalfWidth *
+                        0.67f
 
                 paint.color =
                     if (i % 2 == 0) {
+
                         Color.argb(
-                            180,
-                            20,
-                            100,
+                            230,
+                            30,
+                            125,
                             255
                         )
+
                     } else {
+
                         Color.argb(
-                            180,
+                            230,
                             255,
-                            35,
-                            55
+                            50,
+                            65
                         )
                     }
 
                 canvas.drawCircle(
-                    centerX - sideOffset,
+                    centerX -
+                        sideOffset,
                     y,
-                    2f + normalized * 3f,
+                    2f +
+                        normalized * 4f,
                     paint
                 )
 
                 canvas.drawCircle(
-                    centerX + sideOffset,
+                    centerX +
+                        sideOffset,
                     y,
-                    2f + normalized * 3f,
+                    2f +
+                        normalized * 4f,
                     paint
                 )
             }
 
-            // ----------------------------------------------------
-            // HORIZON LIGHT
-            // ----------------------------------------------------
+            // ====================================================
+            // BRIDGE HORIZON GLOW
+            // ====================================================
 
-            paint.color = Color.argb(
-                160,
-                50,
-                120,
-                255
-            )
+            glowPaint.shader =
+                LinearGradient(
+                    0f,
+                    horizonY - 50f,
+                    0f,
+                    horizonY + 50f,
+                    Color.argb(
+                        0,
+                        40,
+                        140,
+                        255
+                    ),
+                    Color.argb(
+                        160,
+                        40,
+                        140,
+                        255
+                    ),
+                    Shader.TileMode.CLAMP
+                )
 
             canvas.drawRect(
                 0f,
-                horizonY - 2f,
+                horizonY - 50f,
                 w,
-                horizonY + 2f,
-                paint
+                horizonY + 50f,
+                glowPaint
             )
 
-            // ----------------------------------------------------
-            // DARK VIGNETTE
-            // ----------------------------------------------------
+            glowPaint.shader = null
 
-            paint.shader = LinearGradient(
-                0f,
-                0f,
-                0f,
-                h,
-                Color.argb(80, 0, 0, 0),
-                Color.argb(160, 0, 0, 0),
-                Shader.TileMode.CLAMP
-            )
+            // ====================================================
+            // LIGHT VIGNETTE
+            // ====================================================
+
+            paint.shader =
+                LinearGradient(
+                    0f,
+                    0f,
+                    0f,
+                    h,
+                    Color.argb(
+                        20,
+                        0,
+                        0,
+                        0
+                    ),
+                    Color.argb(
+                        95,
+                        0,
+                        0,
+                        0
+                    ),
+                    Shader.TileMode.CLAMP
+                )
 
             canvas.drawRect(
                 0f,
@@ -1638,6 +2069,72 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
 
             paint.shader = null
+        }
+
+        // ========================================================
+        // WATER BACKGROUND WITHOUT ROAD
+        // ========================================================
+
+        private fun drawWater(
+            canvas: Canvas,
+            w: Float,
+            h: Float,
+            horizonY: Float
+        ) {
+
+            waterPaint.shader =
+                LinearGradient(
+                    0f,
+                    horizonY,
+                    0f,
+                    h,
+                    Color.rgb(
+                        20,
+                        75,
+                        115
+                    ),
+                    Color.rgb(
+                        5,
+                        28,
+                        50
+                    ),
+                    Shader.TileMode.CLAMP
+                )
+
+            canvas.drawRect(
+                0f,
+                horizonY,
+                w,
+                h,
+                waterPaint
+            )
+
+            waterPaint.shader = null
+
+            // Water lines
+
+            for (i in 0 until 20) {
+
+                val y =
+                    horizonY +
+                        i * 25f
+
+                paint.color =
+                    Color.argb(
+                        100,
+                        60,
+                        160,
+                        220
+                    )
+
+                canvas.drawRect(
+                    0f,
+                    y,
+                    w,
+                    y + 2f,
+                    paint
+                )
+            }
         }
     }
 }
