@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer racing shield -->
+    <path
+        android:fillColor="#111827"
+        android:strokeColor="#18A8FF"
+        android:strokeWidth="3"
+        android:pathData="M54,12 L88,25 L83,63 C80,79 68,91 54,98 C40,91 28,79 25,63 L20,25 Z" />
+
+    <!-- Red speed edge -->
+    <path
+        android:fillColor="#FF3B30"
+        android:pathData="M54,17 L82,28 L79,46 L54,39 L29,46 L26,28 Z" />
+
+    <!-- Main blue racing body -->
+    <path
+        android:fillColor="#168FFF"
+        android:pathData="M54,30 C45,30 36,35 32,44 L38,68 L47,76 L54,82 L61,76 L70,68 L76,44 C72,35 63,30 54,30 Z" />
+
+    <!-- Black center cockpit -->
+    <path
+        android:fillColor="#05070D"
+        android:pathData="M44,42 C47,38 50,36 54,36 C58,36 61,38 64,42 L61,58 L54,66 L47,58 Z" />
+
+    <!-- Left speed blade -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M31,52 L45,48 L42,55 L33,59 Z" />
+
+    <!-- Right speed blade -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M77,52 L63,48 L66,55 L75,59 Z" />
+
+    <!-- Center racing stripe -->
+    <path
+        android:fillColor="#FF3B30"
+        android:pathData="M51,35 L57,35 L60,69 L54,78 L48,69 Z" />
+
+    <!-- Lower aerodynamic edge -->
+    <path
+        android:fillColor="#0A4DFF"
+        android:pathData="M38,69 L47,75 L54,84 L61,75 L70,69 L66,80 L54,91 L42,80 Z" />
+
+</vector>
