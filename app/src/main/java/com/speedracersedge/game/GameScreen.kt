@@ -491,6 +491,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         lobbyTitle.textSize = 22f
+
         lobbyTitle.setTypeface(
             Typeface.DEFAULT,
             Typeface.BOLD
@@ -555,6 +556,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         partyTitle.textSize = 14f
+
         partyTitle.setTypeface(
             Typeface.DEFAULT,
             Typeface.BOLD
@@ -585,11 +587,16 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
             slot.textSize = 10f
             slot.gravity = Gravity.CENTER
+
             slot.setTextColor(
                 if (i < partyPlayers) {
                     Color.WHITE
                 } else {
-                    Color.rgb(120, 175, 220)
+                    Color.rgb(
+                        120,
+                        175,
+                        220
+                    )
                 }
             )
 
@@ -618,10 +625,11 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
             slot.background = slotBackground
 
-            val slotParams = FrameLayout.LayoutParams(
-                120,
-                58
-            )
+            val slotParams =
+                FrameLayout.LayoutParams(
+                    120,
+                    58
+                )
 
             slotParams.leftMargin =
                 12 + (i % 2) * 128
@@ -766,6 +774,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         title.textSize = 18f
+
         title.setTypeface(
             Typeface.DEFAULT,
             Typeface.BOLD
@@ -794,12 +803,14 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 friends[i]
             )
 
-            val friendParams = FrameLayout.LayoutParams(
-                260,
-                55
-            )
+            val friendParams =
+                FrameLayout.LayoutParams(
+                    260,
+                    55
+                )
 
             friendParams.leftMargin = 20
+
             friendParams.topMargin =
                 60 + i * 65
 
@@ -834,10 +845,11 @@ class GameScreen(context: Context) : FrameLayout(context) {
             "CLOSE"
         )
 
-        val closeParams = FrameLayout.LayoutParams(
-            260,
-            50
-        )
+        val closeParams =
+            FrameLayout.LayoutParams(
+                260,
+                50
+            )
 
         closeParams.leftMargin = 20
         closeParams.topMargin = 270
@@ -903,6 +915,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         title.textSize = 25f
+
         title.setTypeface(
             Typeface.DEFAULT,
             Typeface.BOLD
@@ -996,7 +1009,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
             showLobby()
         }
     }
-
     // ============================================================
     // RACE STARTING
     // ============================================================
@@ -1034,6 +1046,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         title.textSize = 25f
+
         title.setTypeface(
             Typeface.DEFAULT,
             Typeface.BOLD
@@ -1060,6 +1073,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         players.textSize = 15f
+
         players.setTextColor(
             Color.rgb(
                 160,
@@ -1284,7 +1298,20 @@ class GameScreen(context: Context) : FrameLayout(context) {
     }
 
     // ============================================================
-    // BRIDGE / CITY / WATER BACKGROUND
+    // RACING BACKGROUND
+    //
+    // VISUAL ORDER:
+    //
+    // CITY
+    //      ↓
+    // WATER      WATER
+    //      ↓
+    //       BRIDGE
+    //      ↓
+    // ROAD + RAILINGS
+    //      ↓
+    // MOVING LIGHTS
+    //
     // ============================================================
 
     private class RacingBackgroundView(
@@ -1306,9 +1333,9 @@ class GameScreen(context: Context) : FrameLayout(context) {
         private val waterPaint =
             Paint(Paint.ANTI_ALIAS_FLAG)
 
-        var showRoad = true
-
         private var animationOffset = 0f
+
+        var showRoad = true
 
         init {
 
@@ -1352,23 +1379,25 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 return
             }
 
-            // BRIGHT NIGHT SKY
+            // ====================================================
+            // NIGHT SKY
+            // ====================================================
 
             paint.shader =
                 LinearGradient(
                     0f,
                     0f,
                     0f,
-                    h * 0.65f,
+                    h * 0.58f,
                     Color.rgb(
-                        8,
-                        22,
-                        48
+                        5,
+                        14,
+                        34
                     ),
                     Color.rgb(
-                        20,
-                        48,
-                        82
+                        23,
+                        57,
+                        92
                     ),
                     Shader.TileMode.CLAMP
                 )
@@ -1377,30 +1406,32 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 0f,
                 0f,
                 w,
-                h * 0.68f,
+                h * 0.60f,
                 paint
             )
 
             paint.shader = null
 
-            // CITY GLOW
+            // ====================================================
+            // CITY HORIZON GLOW
+            // ====================================================
 
             glowPaint.shader =
                 LinearGradient(
                     0f,
-                    h * 0.15f,
+                    h * 0.25f,
                     w,
-                    h * 0.55f,
+                    h * 0.58f,
                     Color.argb(
-                        80,
+                        90,
                         30,
-                        130,
+                        120,
                         255
                     ),
                     Color.argb(
                         110,
                         255,
-                        50,
+                        45,
                         65
                     ),
                     Shader.TileMode.CLAMP
@@ -1410,73 +1441,76 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 0f,
                 0f,
                 w,
-                h * 0.65f,
+                h * 0.60f,
                 glowPaint
             )
 
             glowPaint.shader = null
 
-                       glowPaint.shader = null
-
             // ====================================================
-            // DISTANT CITY
+            // CITY
             // ====================================================
 
-            val cityBase = h * 0.53f
+            val cityBase =
+                h * 0.54f
 
-            var x = 0f
+            var cityX = 0f
             var buildingIndex = 0
 
-            while (x < w) {
+            while (cityX < w) {
 
                 val buildingWidth =
-                    when (buildingIndex % 4) {
-                        0 -> 34f
-                        1 -> 48f
-                        2 -> 28f
-                        else -> 60f
+                    when (buildingIndex % 5) {
+                        0 -> 38f
+                        1 -> 55f
+                        2 -> 30f
+                        3 -> 70f
+                        else -> 45f
                     }
 
                 val buildingHeight =
-                    when (buildingIndex % 5) {
-                        0 -> h * 0.20f
-                        1 -> h * 0.29f
-                        2 -> h * 0.16f
-                        3 -> h * 0.25f
-                        else -> h * 0.34f
+                    when (buildingIndex % 6) {
+                        0 -> h * 0.22f
+                        1 -> h * 0.31f
+                        2 -> h * 0.17f
+                        3 -> h * 0.27f
+                        4 -> h * 0.20f
+                        else -> h * 0.35f
                     }
 
-                val top =
-                    cityBase - buildingHeight
+                val buildingTop =
+                    cityBase -
+                        buildingHeight
 
                 paint.color =
                     when (buildingIndex % 3) {
+
                         0 ->
                             Color.rgb(
-                                13,
-                                28,
-                                52
+                                10,
+                                24,
+                                47
                             )
 
                         1 ->
                             Color.rgb(
-                                18,
-                                34,
-                                60
+                                15,
+                                32,
+                                58
                             )
 
                         else ->
                             Color.rgb(
-                                10,
-                                25,
-                                48
+                                8,
+                                20,
+                                42
                             )
                     }
 
                 canvas.drawRect(
-                    x,
-                    top,
-                    x + buildingWidth,
+                    cityX,
+                    buildingTop,
+                    cityX + buildingWidth,
                     cityBase,
                     paint
                 )
@@ -1485,38 +1519,47 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
                 paint.color =
                     Color.argb(
-                        210,
+                        220,
                         255,
                         55,
-                        65
+                        70
                     )
 
                 canvas.drawRect(
-                    x + buildingWidth * 0.25f,
-                    top - 4f,
-                    x + buildingWidth * 0.75f,
-                    top,
+                    cityX +
+                        buildingWidth * 0.25f,
+                    buildingTop - 4f,
+                    cityX +
+                        buildingWidth * 0.75f,
+                    buildingTop,
                     paint
                 )
 
-                // Building windows
+                // Windows
 
-                var wy = top + 12f
+                var windowY =
+                    buildingTop + 12f
 
-                while (wy < cityBase - 8f) {
+                while (
+                    windowY <
+                    cityBase - 8f
+                ) {
 
-                    var wx = x + 7f
+                    var windowX =
+                        cityX + 7f
 
                     while (
-                        wx <
-                        x + buildingWidth - 6f
+                        windowX <
+                        cityX +
+                        buildingWidth -
+                        6f
                     ) {
 
                         if (
                             (
-                                wx.toInt() +
-                                    wy.toInt() +
-                                    buildingIndex
+                                windowX.toInt() +
+                                windowY.toInt() +
+                                buildingIndex
                             ) % 4 != 0
                         ) {
 
@@ -1524,7 +1567,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
                                 if (
                                     (
                                         buildingIndex +
-                                            wx.toInt()
+                                        windowX.toInt()
                                     ) % 3 == 0
                                 ) {
 
@@ -1532,7 +1575,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
                                         230,
                                         255,
                                         190,
-                                        75
+                                        70
                                     )
 
                                 } else {
@@ -1546,45 +1589,42 @@ class GameScreen(context: Context) : FrameLayout(context) {
                                 }
 
                             canvas.drawRect(
-                                wx,
-                                wy,
-                                wx + 5f,
-                                wy + 4f,
+                                windowX,
+                                windowY,
+                                windowX + 5f,
+                                windowY + 4f,
                                 paint
                             )
                         }
 
-                        wx += 12f
+                        windowX += 12f
                     }
 
-                    wy += 15f
+                    windowY += 15f
                 }
 
-                x += buildingWidth + 5f
+                cityX +=
+                    buildingWidth + 5f
+
                 buildingIndex++
             }
 
             // ====================================================
-            // WATER-ONLY BACKGROUND
+            // HORIZON
             // ====================================================
 
-            if (!showRoad) {
-
-                drawWater(
-                    canvas,
-                    w,
-                    h,
-                    cityBase
-                )
-
-                return
-            }
+            val horizonY =
+                h * 0.545f
 
             // ====================================================
-            // WATER ON BOTH SIDES OF THE BRIDGE
+            // WATER BASE
+            //
+            // Entire lower area starts as water.
+            // The bridge is then drawn over the middle.
+            // This guarantees:
+            //
+            // WATER | BRIDGE | WATER
             // ====================================================
-
-            val horizonY = h * 0.54f
 
             waterPaint.shader =
                 LinearGradient(
@@ -1593,32 +1633,20 @@ class GameScreen(context: Context) : FrameLayout(context) {
                     0f,
                     h,
                     Color.rgb(
-                        18,
-                        65,
-                        105
+                        22,
+                        78,
+                        118
                     ),
                     Color.rgb(
-                        4,
-                        25,
-                        48
+                        3,
+                        23,
+                        45
                     ),
                     Shader.TileMode.CLAMP
                 )
 
-            // Left side water
-
             canvas.drawRect(
                 0f,
-                horizonY,
-                w * 0.38f,
-                h,
-                waterPaint
-            )
-
-            // Right side water
-
-            canvas.drawRect(
-                w * 0.62f,
                 horizonY,
                 w,
                 h,
@@ -1631,88 +1659,161 @@ class GameScreen(context: Context) : FrameLayout(context) {
             // WATER REFLECTIONS
             // ====================================================
 
-            for (i in 0 until 18) {
+            for (i in 0 until 30) {
 
-                val reflectionY =
+                val depth =
+                    i / 30f
+
+                val y =
                     horizonY +
-                        12f +
-                        i * 22f
+                        depth *
+                        (h - horizonY)
 
-                val reflectionWidth =
-                    20f +
-                        i * 7f
+                val width =
+                    15f +
+                        depth * 75f
+
+                val leftCenter =
+                    w * 0.16f
+
+                val rightCenter =
+                    w * 0.84f
 
                 paint.color =
-                    if (i % 2 == 0) {
+                    if (i % 3 == 0) {
 
                         Color.argb(
-                            110,
-                            50,
-                            150,
-                            255
+                            120,
+                            70,
+                            165,
+                            235
                         )
 
-                    } else {
+                    } else if (i % 3 == 1) {
 
                         Color.argb(
                             90,
                             255,
                             70,
-                            80
+                            90
+                        )
+
+                    } else {
+
+                        Color.argb(
+                            75,
+                            120,
+                            210,
+                            255
                         )
                     }
 
-                // Left reflection
-
                 canvas.drawRect(
-                    w * 0.12f -
-                        reflectionWidth,
-                    reflectionY,
-                    w * 0.12f +
-                        reflectionWidth,
-                    reflectionY + 3f,
+                    leftCenter - width,
+                    y,
+                    leftCenter + width,
+                    y + 2f,
                     paint
                 )
 
-                // Right reflection
-
                 canvas.drawRect(
-                    w * 0.88f -
-                        reflectionWidth,
-                    reflectionY,
-                    w * 0.88f +
-                        reflectionWidth,
-                    reflectionY + 3f,
+                    rightCenter - width,
+                    y,
+                    rightCenter + width,
+                    y + 2f,
                     paint
                 )
             }
 
             // ====================================================
-            // BRIDGE
+            // WATER HIGHLIGHTS
+            // ====================================================
+
+            for (i in 0 until 18) {
+
+                val y =
+                    horizonY +
+                        18f +
+                        i * 30f
+
+                val offset =
+                    (
+                        animationOffset *
+                        (0.15f + i * 0.01f)
+                    ) % 80f
+
+                paint.color =
+                    Color.argb(
+                        80,
+                        80,
+                        180,
+                        255
+                    )
+
+                canvas.drawRect(
+                    -40f + offset,
+                    y,
+                    80f + offset,
+                    y + 2f,
+                    paint
+                )
+
+                canvas.drawRect(
+                    w - 80f - offset,
+                    y,
+                    w + 40f - offset,
+                    y + 2f,
+                    paint
+                )
+            }
+
+            // ====================================================
+            // IF ROAD IS DISABLED
+            // ====================================================
+
+            if (!showRoad) {
+
+                drawWaterOnlyDetails(
+                    canvas,
+                    w,
+                    h,
+                    horizonY
+                )
+
+                drawVignette(
+                    canvas,
+                    w,
+                    h
+                )
+
+                return
+            }
+
+            // ====================================================
+            // BRIDGE / ROAD
             // ====================================================
 
             val roadTopWidth =
-                w * 0.095f
+                w * 0.075f
 
             val roadBottomWidth =
-                w * 0.83f
+                w * 0.84f
 
             val roadBottom =
-                h * 1.08f
+                h * 1.10f
 
             roadPaint.style =
                 Paint.Style.FILL
 
             roadPaint.color =
                 Color.rgb(
-                    24,
-                    29,
-                    39
+                    23,
+                    28,
+                    38
                 )
 
-            val bridge = Path()
-
-            // Top-left
+            val bridge =
+                Path()
 
             bridge.moveTo(
                 w / 2f -
@@ -1720,23 +1821,17 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 horizonY
             )
 
-            // Top-right
-
             bridge.lineTo(
                 w / 2f +
                     roadTopWidth,
                 horizonY
             )
 
-            // Bottom-right
-
             bridge.lineTo(
                 w / 2f +
                     roadBottomWidth,
                 roadBottom
             )
-
-            // Bottom-left
 
             bridge.lineTo(
                 w / 2f -
@@ -1752,21 +1847,19 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
 
             // ====================================================
-            // BRIDGE RAILINGS
+            // ROAD EDGE GLOW
             // ====================================================
 
             linePaint.style =
                 Paint.Style.STROKE
 
-            linePaint.strokeWidth = 5f
-
-            // Blue left railing
+            linePaint.strokeWidth = 7f
 
             linePaint.color =
                 Color.argb(
-                    230,
+                    45,
                     70,
-                    155,
+                    150,
                     255
                 )
 
@@ -1780,14 +1873,12 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 linePaint
             )
 
-            // Red right railing
-
             linePaint.color =
                 Color.argb(
-                    230,
+                    45,
                     255,
-                    65,
-                    75
+                    60,
+                    70
                 )
 
             canvas.drawLine(
@@ -1801,6 +1892,122 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
 
             // ====================================================
+            // BLUE LEFT RAILING
+            // ====================================================
+
+            linePaint.strokeWidth = 5f
+
+            linePaint.color =
+                Color.rgb(
+                    55,
+                    145,
+                    255
+                )
+
+            canvas.drawLine(
+                w / 2f -
+                    roadTopWidth,
+                horizonY,
+                w / 2f -
+                    roadBottomWidth,
+                roadBottom,
+                linePaint
+            )
+
+            // ====================================================
+            // RED RIGHT RAILING
+            // ====================================================
+
+            linePaint.color =
+                Color.rgb(
+                    255,
+                    55,
+                    70
+                )
+
+            canvas.drawLine(
+                w / 2f +
+                    roadTopWidth,
+                horizonY,
+                w / 2f +
+                    roadBottomWidth,
+                roadBottom,
+                linePaint
+            )
+
+            // ====================================================
+            // RAILING POSTS
+            // ====================================================
+
+            for (i in 0 until 15) {
+
+                val depth =
+                    i / 15f
+
+                val y =
+                    horizonY +
+                        (
+                            roadBottom -
+                                horizonY
+                        ) *
+                        depth
+
+                val roadHalfWidth =
+                    roadTopWidth +
+                        (
+                            roadBottomWidth -
+                                roadTopWidth
+                        ) *
+                        depth
+
+                val leftX =
+                    w / 2f -
+                        roadHalfWidth
+
+                val rightX =
+                    w / 2f +
+                        roadHalfWidth
+
+                val postHeight =
+                    5f +
+                        depth * 20f
+
+                linePaint.strokeWidth =
+                    2f +
+                        depth * 2f
+
+                linePaint.color =
+                    Color.rgb(
+                        65,
+                        160,
+                        255
+                    )
+
+                canvas.drawLine(
+                    leftX,
+                    y,
+                    leftX,
+                    y - postHeight,
+                    linePaint
+                )
+
+                linePaint.color =
+                    Color.rgb(
+                        255,
+                        70,
+                        80
+                    )
+
+                canvas.drawLine(
+                    rightX,
+                    y,
+                    rightX,
+                    y - postHeight,
+                    linePaint
+                )
+            }
+
+            // ====================================================
             // BRIDGE LIGHT POSTS
             // ====================================================
 
@@ -1810,8 +2017,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
                     (
                         (
                             i +
-                                animationOffset /
-                                100f
+                            animationOffset / 100f
                         ) % 12
                     ) / 12f
 
@@ -1820,50 +2026,74 @@ class GameScreen(context: Context) : FrameLayout(context) {
                         (
                             roadBottom -
                                 horizonY
-                        ) * depth
+                        ) *
+                        depth
 
                 val roadHalfWidth =
                     roadTopWidth +
                         (
                             roadBottomWidth -
                                 roadTopWidth
-                        ) * depth
+                        ) *
+                        depth
 
                 val leftX =
                     w / 2f -
                         roadHalfWidth *
-                        0.82f
+                        0.78f
 
                 val rightX =
                     w / 2f +
                         roadHalfWidth *
-                        0.82f
+                        0.78f
+
+                val radius =
+                    2f +
+                        depth * 5f
 
                 paint.color =
                     Color.argb(
-                        220,
-                        170,
+                        230,
+                        160,
                         220,
                         255
                     )
 
-                // Left light
-
                 canvas.drawCircle(
                     leftX,
                     y,
-                    3f +
-                        depth * 4f,
+                    radius,
                     paint
                 )
-
-                // Right light
 
                 canvas.drawCircle(
                     rightX,
                     y,
-                    3f +
-                        depth * 4f,
+                    radius,
+                    paint
+                )
+
+                // Light glow
+
+                paint.color =
+                    Color.argb(
+                        35,
+                        100,
+                        190,
+                        255
+                    )
+
+                canvas.drawCircle(
+                    leftX,
+                    y,
+                    radius * 3f,
+                    paint
+                )
+
+                canvas.drawCircle(
+                    rightX,
+                    y,
+                    radius * 3f,
                     paint
                 )
             }
@@ -1875,20 +2105,24 @@ class GameScreen(context: Context) : FrameLayout(context) {
             val centerX =
                 w / 2f
 
-            for (i in 0 until 9) {
+            for (i in 0 until 12) {
 
                 val depth =
-                    i / 9f
+                    i / 12f
 
                 val nextDepth =
-                    (i + 0.42f) / 9f
+                    min(
+                        (i + 0.45f) / 12f,
+                        1f
+                    )
 
                 val y1 =
                     horizonY +
                         (
                             roadBottom -
                                 horizonY
-                        ) * depth
+                        ) *
+                        depth
 
                 val y2 =
                     horizonY +
@@ -1896,51 +2130,43 @@ class GameScreen(context: Context) : FrameLayout(context) {
                             roadBottom -
                                 horizonY
                         ) *
-                        min(
-                            nextDepth,
-                            1f
-                        )
+                        nextDepth
 
-                val halfWidth =
-                    3f +
-                        depth * 14f
-
-                linePaint.color =
-                    Color.argb(
-                        235,
-                        245,
-                        245,
-                        245
-                    )
+                val width =
+                    2f +
+                        depth * 10f
 
                 linePaint.strokeWidth =
                     2f +
                         depth * 4f
 
+                linePaint.color =
+                    Color.argb(
+                        240,
+                        240,
+                        245,
+                        250
+                    )
+
                 canvas.drawLine(
-                    centerX -
-                        halfWidth,
+                    centerX - width,
                     y1,
-                    centerX +
-                        halfWidth,
+                    centerX + width,
                     y2,
                     linePaint
                 )
             }
 
             // ====================================================
-            // MOVING CITY / ROAD LIGHTS
+            // MOVING BLUE / RED LIGHTS
             // ====================================================
 
-            for (i in 0 until 16) {
+            for (i in 0 until 22) {
 
                 val normalized =
                     (
-                        (
-                            i * 0.18f
-                        ) +
-                            animationOffset /
-                            1000f
+                        i * 0.12f +
+                        animationOffset / 85f
                     ) % 1f
 
                 val y =
@@ -1948,36 +2174,40 @@ class GameScreen(context: Context) : FrameLayout(context) {
                         (
                             roadBottom -
                                 horizonY
-                        ) * normalized
+                        ) *
+                        normalized
 
                 val roadHalfWidth =
                     roadTopWidth +
                         (
                             roadBottomWidth -
                                 roadTopWidth
-                        ) * normalized
+                        ) *
+                        normalized
 
                 val sideOffset =
                     roadHalfWidth *
-                        0.67f
+                    0.62f
+
+                val radius =
+                    2f +
+                        normalized * 5f
 
                 paint.color =
                     if (i % 2 == 0) {
 
-                        Color.argb(
-                            230,
-                            30,
-                            125,
+                        Color.rgb(
+                            40,
+                            140,
                             255
                         )
 
                     } else {
 
-                        Color.argb(
-                            230,
+                        Color.rgb(
                             255,
-                            50,
-                            65
+                            55,
+                            70
                         )
                     }
 
@@ -1985,8 +2215,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
                     centerX -
                         sideOffset,
                     y,
-                    2f +
-                        normalized * 4f,
+                    radius,
                     paint
                 )
 
@@ -1994,22 +2223,21 @@ class GameScreen(context: Context) : FrameLayout(context) {
                     centerX +
                         sideOffset,
                     y,
-                    2f +
-                        normalized * 4f,
+                    radius,
                     paint
                 )
             }
 
             // ====================================================
-            // BRIDGE HORIZON GLOW
+            // HORIZON BRIDGE GLOW
             // ====================================================
 
             glowPaint.shader =
                 LinearGradient(
                     0f,
-                    horizonY - 50f,
+                    horizonY - 70f,
                     0f,
-                    horizonY + 50f,
+                    horizonY + 70f,
                     Color.argb(
                         0,
                         40,
@@ -2017,7 +2245,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
                         255
                     ),
                     Color.argb(
-                        160,
+                        170,
                         40,
                         140,
                         255
@@ -2027,17 +2255,84 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
             canvas.drawRect(
                 0f,
-                horizonY - 50f,
+                horizonY - 70f,
                 w,
-                horizonY + 50f,
+                horizonY + 70f,
                 glowPaint
             )
 
             glowPaint.shader = null
 
             // ====================================================
-            // LIGHT VIGNETTE
+            // FINAL VIGNETTE
             // ====================================================
+
+            drawVignette(
+                canvas,
+                w,
+                h
+            )
+        }
+
+        // ========================================================
+        // WATER-ONLY DETAILS
+        // ========================================================
+
+        private fun drawWaterOnlyDetails(
+            canvas: Canvas,
+            w: Float,
+            h: Float,
+            horizonY: Float
+        ) {
+
+            for (i in 0 until 22) {
+
+                val y =
+                    horizonY +
+                        i * 24f
+
+                val movement =
+                    (
+                        animationOffset *
+                        0.4f +
+                        i * 17f
+                    ) % 120f
+
+                paint.color =
+                    Color.argb(
+                        80,
+                        80,
+                        180,
+                        240
+                    )
+
+                canvas.drawRect(
+                    -100f + movement,
+                    y,
+                    60f + movement,
+                    y + 2f,
+                    paint
+                )
+
+                canvas.drawRect(
+                    w - 60f - movement,
+                    y,
+                    w + 100f - movement,
+                    y + 2f,
+                    paint
+                )
+            }
+        }
+
+        // ========================================================
+        // VIGNETTE
+        // ========================================================
+
+        private fun drawVignette(
+            canvas: Canvas,
+            w: Float,
+            h: Float
+        ) {
 
             paint.shader =
                 LinearGradient(
@@ -2046,13 +2341,13 @@ class GameScreen(context: Context) : FrameLayout(context) {
                     0f,
                     h,
                     Color.argb(
-                        20,
+                        10,
                         0,
                         0,
                         0
                     ),
                     Color.argb(
-                        95,
+                        100,
                         0,
                         0,
                         0
@@ -2069,72 +2364,6 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
 
             paint.shader = null
-        }
-
-        // ========================================================
-        // WATER BACKGROUND WITHOUT ROAD
-        // ========================================================
-
-        private fun drawWater(
-            canvas: Canvas,
-            w: Float,
-            h: Float,
-            horizonY: Float
-        ) {
-
-            waterPaint.shader =
-                LinearGradient(
-                    0f,
-                    horizonY,
-                    0f,
-                    h,
-                    Color.rgb(
-                        20,
-                        75,
-                        115
-                    ),
-                    Color.rgb(
-                        5,
-                        28,
-                        50
-                    ),
-                    Shader.TileMode.CLAMP
-                )
-
-            canvas.drawRect(
-                0f,
-                horizonY,
-                w,
-                h,
-                waterPaint
-            )
-
-            waterPaint.shader = null
-
-            // Water lines
-
-            for (i in 0 until 20) {
-
-                val y =
-                    horizonY +
-                        i * 25f
-
-                paint.color =
-                    Color.argb(
-                        100,
-                        60,
-                        160,
-                        220
-                    )
-
-                canvas.drawRect(
-                    0f,
-                    y,
-                    w,
-                    y + 2f,
-                    paint
-                )
-            }
         }
     }
 }
