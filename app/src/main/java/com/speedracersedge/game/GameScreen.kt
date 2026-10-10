@@ -141,6 +141,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         val progressLabel = label("LOADING 0%", 11f, Color.WHITE, true)
+
         root.addView(
             progressLabel,
             LinearLayout.LayoutParams(-1, dp(27))
@@ -219,7 +220,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
     }
 
     // ---------------------------------------------------------
-    // MAIN LOBBY - NOT A GARAGE
+    // MAIN LOBBY - CITY ENVIRONMENT, NO GARAGE BUTTON
     // ---------------------------------------------------------
 
     private fun showLobby() {
@@ -230,6 +231,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         val root = FrameLayout(context)
         content.addView(root, fullParams())
 
+        // Top bar: profile, currencies and settings.
         val top = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -251,8 +253,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         top.addView(
-            button("⚙") { showSettings() },
-            LinearLayout.LayoutParams(dp(43), dp(40))
+            button("SETTINGS") { showSettings() },
+            LinearLayout.LayoutParams(0, dp(40), 1f)
         )
 
         root.addView(
@@ -265,15 +267,20 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         root.addView(
-            label("THE CITY IS YOURS", 23f, Color.WHITE, true),
-            params(-1, 45).apply { topMargin = dp(68) }
+            label("SPEED RACERS EDGE", 23f, Color.WHITE, true),
+            params(-1, 45).apply {
+                topMargin = dp(68)
+            }
         )
 
         root.addView(
-            label("RACE • COMPETE • ESCAPE", 11f, cyan, true),
-            params(-1, 28).apply { topMargin = dp(110) }
+            label("ONLINE RACE  •  CITY DISTRICT", 11f, cyan, true),
+            params(-1, 28).apply {
+                topMargin = dp(110)
+            }
         )
 
+        // Central city-lobby message.
         val feature = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -286,7 +293,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         }
 
         feature.addView(
-            label("STREET DOMINANCE", 19f, Color.WHITE, true),
+            label("THE CITY IS YOURS", 19f, Color.WHITE, true),
             LinearLayout.LayoutParams(-1, dp(38))
         )
 
@@ -313,6 +320,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
             }
         )
 
+        // Crew panel.
         val crew = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
@@ -350,6 +358,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
             }
         )
 
+        // Main lobby navigation.
+        // Garage is deliberately NOT a lobby navigation item.
         val nav = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
@@ -371,10 +381,38 @@ class GameScreen(context: Context) : FrameLayout(context) {
             )
         }
 
-        navItem("SHOP") { showShop() }
-        navItem("INVENTORY") { showInventory() }
-        navItem("GARAGE") { showGarage() }
-        navItem("MODE") { showMode() }
+        navItem("SHOP") {
+            showShop()
+        }
+
+        navItem("STANDING") {
+            showInventory()
+        }
+
+        navItem("WAVE") {
+            Toast.makeText(
+                context,
+                "Wave emote selected. Character animation will be connected with the 3D lobby character.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        navItem("PAINT") {
+            shopCategory = "Car Skins"
+            showShop()
+        }
+
+        navItem("FX ON") {
+            Toast.makeText(
+                context,
+                "Neon effects are enabled.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        navItem("MODE") {
+            showMode()
+        }
 
         root.addView(
             nav,
@@ -387,7 +425,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
     }
 
     // ---------------------------------------------------------
-    // CHARACTER INVENTORY - REAL 3D CHARACTER MODEL
+    // CHARACTER INVENTORY - 3D MODEL PREVIEW
     // ---------------------------------------------------------
 
     private fun showInventory() {
@@ -399,7 +437,9 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         root.addView(
             label("YOUR CHARACTER • CASUAL OUTFIT", 11f, cyan, true),
-            params(-1, 30).apply { topMargin = dp(58) }
+            params(-1, 30).apply {
+                topMargin = dp(58)
+            }
         )
 
         val model = ModelPreviewView(
@@ -462,7 +502,8 @@ class GameScreen(context: Context) : FrameLayout(context) {
     }
 
     // ---------------------------------------------------------
-    // VEHICLE GARAGE - REAL 3D CAR MODEL
+    // VEHICLE GARAGE PAGE
+    // Retained as a separate screen, not in the main lobby.
     // ---------------------------------------------------------
 
     private fun showGarage() {
@@ -470,11 +511,13 @@ class GameScreen(context: Context) : FrameLayout(context) {
         clear()
         setCityBackground(false)
 
-        val root = pageRoot("VEHICLE GARAGE")
+        val root = pageRoot("VEHICLE COLLECTION")
 
         root.addView(
             label("YOUR VEHICLES • SPORTS CAR", 11f, cyan, true),
-            params(-1, 30).apply { topMargin = dp(58) }
+            params(-1, 30).apply {
+                topMargin = dp(58)
+            }
         )
 
         val model = ModelPreviewView(
@@ -567,7 +610,9 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
     private fun addBottomBack(root: FrameLayout) {
         root.addView(
-            button("← BACK TO LOBBY") { showLobby() },
+            button("← BACK TO LOBBY") {
+                showLobby()
+            },
             params(-1, 42, Gravity.BOTTOM).apply {
                 leftMargin = dp(12)
                 rightMargin = dp(12)
@@ -636,7 +681,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
     }
 
     // ---------------------------------------------------------
-    // SHOP - LOCKED ITEMS ARE SEPARATE FROM OWNED INVENTORY
+    // SHOP
     // ---------------------------------------------------------
 
     private fun showShop() {
@@ -648,7 +693,9 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         root.addView(
             label("◈ $coins Race Coins     ◆ $gems Gems", 12f, gold, true),
-            params(-1, 35).apply { topMargin = dp(57) }
+            params(-1, 35).apply {
+                topMargin = dp(57)
+            }
         )
 
         val categories = listOf(
@@ -663,6 +710,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
         )
 
         val scroll = ScrollView(context)
+
         val list = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(5), dp(12), dp(12))
@@ -734,7 +782,9 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 11f,
                 Color.WHITE
             ),
-            params(-1, 38).apply { topMargin = dp(58) }
+            params(-1, 38).apply {
+                topMargin = dp(58)
+            }
         )
 
         listOf(
@@ -833,7 +883,9 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
         root.addView(
             label("ADAM", 25f, Color.WHITE, true),
-            params(-1, 55).apply { topMargin = dp(78) }
+            params(-1, 55).apply {
+                topMargin = dp(78)
+            }
         )
 
         root.addView(
@@ -842,14 +894,16 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 14f,
                 Color.LTGRAY
             ),
-            params(-1, 115).apply { topMargin = dp(140) }
+            params(-1, 115).apply {
+                topMargin = dp(140)
+            }
         )
 
         addBottomBack(root)
     }
 
     // ---------------------------------------------------------
-    // CITY BACKGROUND - NO GARAGE OR DRAWN CAR
+    // CITY BACKGROUND
     // ---------------------------------------------------------
 
     private inner class CityBackground(
@@ -887,7 +941,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
             if (!showCity) return
 
-            // Distant city skyline.
+            // Distant skyline.
             paint.color = Color.rgb(8, 18, 36)
 
             val skylineY = h * 0.42f
@@ -896,6 +950,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
             for (i in 0 until buildings) {
                 val x = w * i / buildings
                 val buildingWidth = w / buildings + dp(3)
+
                 val buildingHeight =
                     h * (0.12f + ((i * 17) % 23) / 100f)
 
@@ -928,6 +983,7 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
             // Neon horizon.
             paint.color = Color.argb(70, 0, 190, 255)
+
             canvas.drawRect(
                 0f,
                 h * 0.66f,
@@ -936,18 +992,54 @@ class GameScreen(context: Context) : FrameLayout(context) {
                 paint
             )
 
-            // Distant road perspective.
+            // City road perspective.
             paint.color = Color.rgb(16, 28, 45)
+
             val roadTop = h * 0.70f
-            canvas.drawRect(0f, roadTop, w, h, paint)
+
+            canvas.drawRect(
+                0f,
+                roadTop,
+                w,
+                h,
+                paint
+            )
 
             paint.color = Color.rgb(0, 95, 125)
-            canvas.drawLine(w * 0.5f, roadTop, 0f, h, paint)
-            canvas.drawLine(w * 0.5f, roadTop, w, h, paint)
+
+            canvas.drawLine(
+                w * 0.5f,
+                roadTop,
+                0f,
+                h,
+                paint
+            )
+
+            canvas.drawLine(
+                w * 0.5f,
+                roadTop,
+                w,
+                h,
+                paint
+            )
 
             paint.color = Color.rgb(110, 65, 45)
-            canvas.drawLine(w * 0.5f, roadTop, w * 0.42f, h, paint)
-            canvas.drawLine(w * 0.5f, roadTop, w * 0.58f, h, paint)
+
+            canvas.drawLine(
+                w * 0.5f,
+                roadTop,
+                w * 0.42f,
+                h,
+                paint
+            )
+
+            canvas.drawLine(
+                w * 0.5f,
+                roadTop,
+                w * 0.58f,
+                h,
+                paint
+            )
         }
     }
 }
