@@ -6,75 +6,44 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
-import android.graphics.RectF
-import android.graphics.Shader
 import android.graphics.LinearGradient
-import android.graphics.RadialGradient
+import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.max
-import kotlin.math.min
 
 class GameScreen(context: Context) : FrameLayout(context) {
 
     private enum class Screen {
-        LOADING, TAP_TO_START, LOBBY, SETTINGS, CONTROLS,
-        SHOP, FRIENDS, PROFILE, MODE_MENU, RACE_STARTING, INFO
+        LOADING, TAP_TO_START, LOBBY, INVENTORY, GARAGE,
+        SHOP, FRIENDS, SETTINGS, PROFILE, MODE
     }
 
     private var currentScreen = Screen.LOADING
-    private var loadingProgress = 0
-    private var selectedMode = "ONLINE RACE"
-    private var selectedControl = "Touch Steering"
-    private var playerReady = false
-    private var teamPlayers = 1
+    private var progress = 0
     private var coins = 0
     private var gems = 0
-    private var pendingInvite = false
-    private var pendingInviteName = "Alex"
+    private var selectedMode = "ONLINE RACE"
+    private var ready = false
+    private var teamSize = 1
     private var shopCategory = "Cars"
-    private var pageButtonCount = 0
 
-    private var poseIndex = 0
-    private var emoteIndex = 0
-    private var skinIndex = 0
-    private var effectsEnabled = true
+    private val cyan = Color.rgb(0, 220, 255)
+    private val gold = Color.rgb(255, 198, 62)
+    private val panel = Color.rgb(9, 18, 35)
 
-    private val skinNames = listOf(
-        "NEON CYAN", "RACING RED", "VIOLET", "GOLD"
-    )
-
-    private val skinColors = listOf(
-        Color.rgb(0, 220, 255),
-        Color.rgb(255, 45, 75),
-        Color.rgb(175, 75, 255),
-        Color.rgb(255, 185, 40)
-    )
-
-    private val poseNames = listOf("STANDING", "SITTING", "VICTORY")
-    private val emoteNames = listOf("WAVE", "FLEX", "DANCE")
-
-    private val backgroundView = GarageBackgroundView(context)
+    private val background = CityBackground(context)
     private val content = FrameLayout(context)
-
-    private val neon = Color.rgb(0, 220, 255)
-    private val gold = Color.rgb(255, 197, 65)
-    private val panelColor = Color.rgb(5, 13, 29)
 
     init {
         setBackgroundColor(Color.rgb(3, 7, 17))
-        addView(backgroundView, fullParams())
+        addView(background, fullParams())
         addView(content, fullParams())
         showLoading()
     }
@@ -82,89 +51,139 @@ class GameScreen(context: Context) : FrameLayout(context) {
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
-    private fun fullParams() =
-        LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+    private fun fullParams() = LayoutParams(
+        LayoutParams.MATCH_PARENT,
+        LayoutParams.MATCH_PARENT
+    )
 
-    private fun frameParams(
+    private fun params(
         width: Int,
         height: Int,
         gravity: Int = Gravity.TOP or Gravity.START
     ) = LayoutParams(
-        if (width == LayoutParams.MATCH_PARENT) width else dp(width),
-        if (height == LayoutParams.MATCH_PARENT) height else dp(height),
+        if (width == -1) LayoutParams.MATCH_PARENT else dp(width),
+        if (height == -1) LayoutParams.MATCH_PARENT else dp(height),
         gravity
     )
 
-    private fun resetContent() {
+    private fun clear() {
         content.removeAllViews()
     }
 
-    private fun addBackground(showRoad: Boolean = true) {
-        backgroundView.showRoad = showRoad
-        backgroundView.invalidate()
+    private fun setCityBackground(showCity: Boolean = true) {
+        background.showCity = showCity
+        background.invalidate()
     }
+
+    private fun label(
+        value: String,
+        size: Float = 12f,
+        color: Int = Color.WHITE,
+        bold: Boolean = false
+    ) = TextView(context).apply {
+        text = value
+        textSize = size
+        setTextColor(color)
+        gravity = Gravity.CENTER
+        typeface = Typeface.create(
+            "sans-serif",
+            if (bold) Typeface.BOLD else Typeface.NORMAL
+        )
+        setPadding(dp(5), dp(3), dp(5), dp(3))
+    }
+
+    private fun button(
+        value: String,
+        action: () -> Unit
+    ) = label(value, 11f, Color.WHITE, true).apply {
+        isClickable = true
+        isFocusable = true
+        background = rounded(panel, cyan, 1)
+        setOnClickListener { action() }
+    }
+
+    private fun rounded(
+        fill: Int,
+        stroke: Int = cyan,
+        strokeWidth: Int = 1
+    ) = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = dp(9).toFloat()
+        setColor(fill)
+        if (strokeWidth > 0) {
+            setStroke(dp(strokeWidth), stroke)
+        }
+    }
+
+    // ---------------------------------------------------------
+    // LOADING SCREEN
+    // ---------------------------------------------------------
 
     private fun showLoading() {
         currentScreen = Screen.LOADING
-        resetContent()
-        addBackground()
+        clear()
+        setCityBackground()
 
-        val panel = LinearLayout(context).apply {
+        val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            setPadding(dp(24), dp(24), dp(24), dp(32))
+            setPadding(dp(22), dp(22), dp(22), dp(35))
         }
 
-        panel.addView(
-            createText("SPEED RACERS EDGE", 26f, Color.WHITE, true).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(-1, dp(44))
+        root.addView(
+            label("SPEED RACERS EDGE", 25f, Color.WHITE, true),
+            LinearLayout.LayoutParams(-1, dp(48))
         )
 
-        panel.addView(
-            createText("ENTER THE NEON GARAGE", 11f, neon, true).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(-1, dp(26))
+        root.addView(
+            label("PREPARE TO RACE", 12f, cyan, true),
+            LinearLayout.LayoutParams(-1, dp(30))
         )
 
-        val progressText = createText("LOADING 0%", 11f, Color.WHITE, true)
-        progressText.gravity = Gravity.CENTER
-        panel.addView(progressText, LinearLayout.LayoutParams(-1, dp(26)))
+        val progressLabel = label("LOADING 0%", 11f, Color.WHITE, true)
+        root.addView(
+            progressLabel,
+            LinearLayout.LayoutParams(-1, dp(27))
+        )
 
         val track = FrameLayout(context).apply {
-            background = roundedBackground(Color.DKGRAY, neon, 1)
+            background = rounded(Color.DKGRAY, cyan, 1)
         }
 
         val fill = View(context).apply {
-            background = roundedBackground(neon, neon, 0)
+            background = rounded(cyan, cyan, 0)
         }
 
-        track.addView(fill, FrameLayout.LayoutParams(0, dp(6), Gravity.START))
-        panel.addView(track, LinearLayout.LayoutParams(-1, dp(8)))
-        content.addView(panel, fullParams())
+        track.addView(
+            fill,
+            FrameLayout.LayoutParams(0, dp(6), Gravity.START)
+        )
 
-        loadingProgress = 0
+        root.addView(track, LinearLayout.LayoutParams(-1, dp(8)))
+        content.addView(root, fullParams())
+
+        progress = 0
 
         val task = object : Runnable {
             override fun run() {
                 if (currentScreen != Screen.LOADING) return
 
-                loadingProgress = (loadingProgress + 5).coerceAtMost(100)
-                progressText.text = "LOADING $loadingProgress%"
+                progress = (progress + 5).coerceAtMost(100)
+                progressLabel.text = "LOADING $progress%"
 
                 fill.layoutParams = FrameLayout.LayoutParams(
-                    (track.width * loadingProgress / 100f).toInt(),
+                    (track.width * progress / 100f).toInt(),
                     dp(6),
                     Gravity.START
                 )
 
-                if (loadingProgress < 100) {
-                    postDelayed(this, 70L)
+                if (progress < 100) {
+                    postDelayed(this, 65L)
                 } else {
                     postDelayed({
-                        if (currentScreen == Screen.LOADING) showTapToStart()
+                        if (currentScreen == Screen.LOADING) {
+                            showTapToStart()
+                        }
                     }, 250L)
                 }
             }
@@ -175,594 +194,417 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
     private fun showTapToStart() {
         currentScreen = Screen.TAP_TO_START
-        resetContent()
-        addBackground()
+        clear()
+        setCityBackground()
 
-        val panel = LinearLayout(context).apply {
+        val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            setPadding(dp(20), dp(20), dp(20), dp(36))
+            setPadding(dp(20), dp(20), dp(20), dp(35))
             isClickable = true
             setOnClickListener { showLobby() }
         }
 
-        panel.addView(
-            createText("SPEED RACERS EDGE", 28f, Color.WHITE, true).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(-1, dp(48))
+        root.addView(
+            label("SPEED RACERS EDGE", 27f, Color.WHITE, true),
+            LinearLayout.LayoutParams(-1, dp(50))
         )
 
-        panel.addView(
-            createText("T A P   T O   S T A R T", 14f, neon, true).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(-1, dp(38))
+        root.addView(
+            label("T A P   T O   S T A R T", 14f, cyan, true),
+            LinearLayout.LayoutParams(-1, dp(40))
         )
 
-        content.addView(panel, fullParams())
+        content.addView(root, fullParams())
     }
+
+    // ---------------------------------------------------------
+    // MAIN LOBBY - NOT A GARAGE
+    // ---------------------------------------------------------
 
     private fun showLobby() {
         currentScreen = Screen.LOBBY
-        resetContent()
-        addBackground(false)
+        clear()
+        setCityBackground()
 
         val root = FrameLayout(context)
         content.addView(root, fullParams())
 
-        // Top navigation.
-        root.addView(
-            createButton("ADAM • LV.1", 10f) { showProfile() },
-            frameParams(112, 36, Gravity.TOP or Gravity.START).apply {
-                leftMargin = dp(8)
-                topMargin = dp(7)
-            }
-        )
-
-        val currencyBar = LinearLayout(context).apply {
+        val top = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            background = roundedBackground(panelColor, neon, 1)
+            gravity = Gravity.CENTER_VERTICAL
         }
 
-        currencyBar.addView(
-            createText("◈ $coins", 11f, Color.WHITE, true).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(0, -1, 1f)
+        top.addView(
+            button("ADAM • LV.1") { showProfile() },
+            LinearLayout.LayoutParams(0, dp(40), 1.15f)
         )
 
-        currencyBar.addView(
-            createText("◆ $gems", 11f, gold, true).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(0, -1, 1f)
+        top.addView(
+            label("◈ $coins", 11f, Color.WHITE, true),
+            LinearLayout.LayoutParams(0, dp(40), 0.85f)
+        )
+
+        top.addView(
+            label("◆ $gems", 11f, gold, true),
+            LinearLayout.LayoutParams(0, dp(40), 0.85f)
+        )
+
+        top.addView(
+            button("⚙") { showSettings() },
+            LinearLayout.LayoutParams(dp(43), dp(40))
         )
 
         root.addView(
-            currencyBar,
-            frameParams(142, 36, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply {
+            top,
+            params(-1, 44).apply {
+                leftMargin = dp(7)
+                rightMargin = dp(7)
                 topMargin = dp(7)
             }
         )
 
         root.addView(
-            createButton("SETTINGS", 9f) { showSettings() },
-            frameParams(82, 36, Gravity.TOP or Gravity.END).apply {
-                rightMargin = dp(8)
-                topMargin = dp(7)
-            }
+            label("THE CITY IS YOURS", 23f, Color.WHITE, true),
+            params(-1, 45).apply { topMargin = dp(68) }
         )
 
         root.addView(
-            createText("NEON GARAGE", 14f, Color.WHITE, true).apply {
-                gravity = Gravity.CENTER
-                letterSpacing = 0.12f
-            },
-            frameParams(-1, 25, Gravity.TOP).apply {
-                topMargin = dp(46)
-            }
+            label("RACE • COMPETE • ESCAPE", 11f, cyan, true),
+            params(-1, 28).apply { topMargin = dp(110) }
         )
 
-        root.addView(
-            createText("$selectedMode  •  SUPERCAR BAY 01", 9f, neon, true).apply {
-                gravity = Gravity.CENTER
-            },
-            frameParams(-1, 19, Gravity.TOP).apply {
-                topMargin = dp(68)
-            }
-        )
-
-        // The stage draws the supercar and driver directly on Canvas.
-        val stage = NeonGarageStage(context)
-        root.addView(
-            stage,
-            frameParams(-1, -1).apply {
-                leftMargin = dp(8)
-                topMargin = dp(91)
-                rightMargin = dp(157)
-                bottomMargin = dp(57)
-            }
-        )
-
-        // Crew panel.
-        val team = LinearLayout(context).apply {
+        val feature = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(6), dp(7), dp(6), dp(7))
-            background = roundedBackground(panelColor, neon, 1)
-        }
-
-        team.addView(
-            createText("YOUR CREW", 10f, neon, true).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(-1, dp(23))
-        )
-
-        team.addView(
-            createText("TEAM $teamPlayers / 4", 10f, Color.WHITE, true).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(-1, dp(22))
-        )
-
-        for (i in 0..3) {
-            val label = when {
-                i == 0 -> "● ADAM"
-                i < teamPlayers -> "● MEMBER ${i + 1}"
-                else -> "+ OPEN SLOT"
-            }
-
-            val color = when {
-                i == 0 -> neon
-                i < teamPlayers -> Color.WHITE
-                else -> Color.LTGRAY
-            }
-
-            team.addView(
-                createText(label, 8f, color, i < teamPlayers).apply {
-                    gravity = Gravity.CENTER
-                },
-                LinearLayout.LayoutParams(-1, dp(24))
+            gravity = Gravity.CENTER
+            background = rounded(
+                Color.argb(218, 7, 16, 33),
+                Color.rgb(35, 92, 125),
+                1
             )
+            setPadding(dp(12), dp(12), dp(12), dp(12))
         }
 
-        team.addView(
-            createButton("FRIENDS", 9f) { showFriends() },
-            LinearLayout.LayoutParams(-1, dp(31)).apply {
-                topMargin = dp(3)
-            }
+        feature.addView(
+            label("STREET DOMINANCE", 19f, Color.WHITE, true),
+            LinearLayout.LayoutParams(-1, dp(38))
         )
 
-        team.addView(
-            createButton(if (playerReady) "READY ✓" else "READY UP", 9f) {
-                playerReady = !playerReady
-                showLobby()
-            },
-            LinearLayout.LayoutParams(-1, dp(31)).apply {
-                topMargin = dp(4)
-            }
+        feature.addView(
+            label(
+                "Build your collection. Assemble your crew.\nChoose a mode and hit the streets.",
+                12f,
+                Color.LTGRAY
+            ),
+            LinearLayout.LayoutParams(-1, dp(55))
+        )
+
+        feature.addView(
+            button("SELECT MODE  →") { showMode() },
+            LinearLayout.LayoutParams(-1, dp(43))
         )
 
         root.addView(
-            team,
-            frameParams(143, 218, Gravity.END or Gravity.CENTER_VERTICAL).apply {
-                rightMargin = dp(8)
-                topMargin = dp(14)
+            feature,
+            params(-1, 180, Gravity.CENTER).apply {
+                leftMargin = dp(22)
+                rightMargin = dp(22)
+                topMargin = dp(-5)
             }
         )
 
-        // Main action strip.
-        val actions = LinearLayout(context).apply {
+        val crew = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setPadding(dp(3), dp(3), dp(3), dp(3))
-            background = roundedBackground(
-                Color.argb(240, 3, 9, 22),
-                Color.rgb(30, 75, 100),
+            background = rounded(
+                Color.argb(220, 5, 12, 25),
+                cyan,
                 1
             )
         }
 
-        fun actionButton(label: String, action: () -> Unit) {
-            actions.addView(
-                createButton(label, 8.5f, action),
-                LinearLayout.LayoutParams(0, -1, 1f).apply {
+        crew.addView(
+            label("CREW $teamSize/4", 10f, Color.WHITE, true),
+            LinearLayout.LayoutParams(0, dp(40), 1f)
+        )
+
+        crew.addView(
+            button("FRIENDS") { showFriends() },
+            LinearLayout.LayoutParams(0, dp(40), 1f)
+        )
+
+        crew.addView(
+            button(if (ready) "READY ✓" else "READY UP") {
+                ready = !ready
+                showLobby()
+            },
+            LinearLayout.LayoutParams(0, dp(40), 1f)
+        )
+
+        root.addView(
+            crew,
+            params(-1, 44, Gravity.BOTTOM).apply {
+                leftMargin = dp(9)
+                rightMargin = dp(9)
+                bottomMargin = dp(112)
+            }
+        )
+
+        val nav = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(dp(5), dp(5), dp(5), dp(5))
+            background = rounded(
+                Color.rgb(4, 10, 22),
+                Color.rgb(38, 65, 88),
+                1
+            )
+        }
+
+        fun navItem(title: String, action: () -> Unit) {
+            nav.addView(
+                button(title, action),
+                LinearLayout.LayoutParams(0, dp(49), 1f).apply {
                     leftMargin = dp(2)
                     rightMargin = dp(2)
                 }
             )
         }
 
-        actionButton("SHOP") { showShop() }
-
-        actionButton(poseNames[poseIndex]) {
-            poseIndex = (poseIndex + 1) % poseNames.size
-            showLobby()
-        }
-
-        actionButton(emoteNames[emoteIndex]) {
-            emoteIndex = (emoteIndex + 1) % emoteNames.size
-            showLobby()
-        }
-
-        actionButton("PAINT") {
-            skinIndex = (skinIndex + 1) % skinNames.size
-            showLobby()
-        }
-
-        actionButton(if (effectsEnabled) "FX ON" else "FX OFF") {
-            effectsEnabled = !effectsEnabled
-            showLobby()
-        }
-
-        actionButton("MODE") { showModeMenu() }
+        navItem("SHOP") { showShop() }
+        navItem("INVENTORY") { showInventory() }
+        navItem("GARAGE") { showGarage() }
+        navItem("MODE") { showMode() }
 
         root.addView(
-            actions,
-            frameParams(-1, 43, Gravity.BOTTOM or Gravity.START).apply {
-                leftMargin = dp(8)
-                rightMargin = dp(157)
+            nav,
+            params(-1, 59, Gravity.BOTTOM).apply {
+                leftMargin = dp(7)
+                rightMargin = dp(7)
                 bottomMargin = dp(7)
             }
         )
-
-        root.addView(
-            createText(
-                "${skinNames[skinIndex]} • ${if (effectsEnabled) "NEON FX ACTIVE" else "FX DISABLED"}",
-                8f,
-                skinColors[skinIndex],
-                true
-            ).apply {
-                gravity = Gravity.CENTER
-            },
-            frameParams(-1, 17, Gravity.BOTTOM).apply {
-                bottomMargin = dp(51)
-                rightMargin = dp(157)
-                leftMargin = dp(8)
-            }
-        )
-
-        if (pendingInvite) showInvitePopup(root)
     }
 
-    private fun showSettings() {
-        currentScreen = Screen.SETTINGS
-        resetContent()
-        addBackground(false)
+    // ---------------------------------------------------------
+    // CHARACTER INVENTORY - REAL 3D CHARACTER MODEL
+    // ---------------------------------------------------------
 
-        val root = makePage("SETTINGS")
-        pageButtonCount = 0
+    private fun showInventory() {
+        currentScreen = Screen.INVENTORY
+        clear()
+        setCityBackground(false)
 
-        addPageButton(root, "Gameplay") {
-            showInfoPage(
-                "GAMEPLAY",
-                "Gameplay options will be connected as racing systems are implemented."
-            )
-        }
-
-        addPageButton(root, "Controls") { showControls() }
-
-        addPageButton(root, "Graphics") {
-            showInfoPage(
-                "GRAPHICS",
-                "Graphics presets will be connected when the 3D renderer is ready."
-            )
-        }
-
-        addPageButton(root, "Sound") {
-            showInfoPage("SOUND", "Sound settings are not connected yet.")
-        }
-
-        addPageButton(root, "Language") {
-            showInfoPage("LANGUAGE", "Language selection will be added here.")
-        }
-
-        addPageButton(root, "Account") {
-            showInfoPage(
-                "ACCOUNT",
-                "Account sign-in and cloud saving are not connected yet."
-            )
-        }
-
-        addPageButton(root, "About") {
-            showInfoPage(
-                "ABOUT",
-                "Speed Racers Edge is an Android racing game in development."
-            )
-        }
-
-        addBackButton(root)
-    }
-
-    private fun showControls() {
-        currentScreen = Screen.CONTROLS
-        resetContent()
-        addBackground(false)
-
-        val root = makePage("CONTROLS")
+        val root = pageRoot("CHARACTER INVENTORY")
 
         root.addView(
-            createText("Choose your preferred steering method.", 13f, Color.WHITE, false),
-            frameParams(-1, 48).apply { topMargin = dp(65) }
+            label("YOUR CHARACTER • CASUAL OUTFIT", 11f, cyan, true),
+            params(-1, 30).apply { topMargin = dp(58) }
         )
 
-        listOf("Tilt", "Steering Wheel", "Arrow Buttons", "Touch Steering")
-            .forEachIndexed { index, option ->
-                root.addView(
-                    createButton(
-                        (if (selectedControl == option) "✓  " else "") + option,
-                        13f
-                    ) {
-                        selectedControl = option
-                        showControls()
-                    },
-                    frameParams(-1, 48).apply {
-                        topMargin = dp(120 + index * 58)
-                        leftMargin = dp(12)
-                        rightMargin = dp(12)
-                    }
-                )
-            }
-
-        addBackButton(root)
-    }
-
-    private fun showShop() {
-        currentScreen = Screen.SHOP
-        resetContent()
-        addBackground(false)
-
-        val root = makePage("GARAGE SHOP")
+        val model = ModelPreviewView(
+            context,
+            "characters/Casual Character.glb"
+        )
 
         root.addView(
-            createText("◈ $coins Race Coins      ◆ $gems Gems", 12f, Color.WHITE, true).apply {
-                gravity = Gravity.CENTER
-            },
-            frameParams(-1, 32).apply { topMargin = dp(58) }
-        )
-
-        val categories = listOf(
-            "Cars", "Drivers", "Car Skins", "Vehicle Effects",
-            "Emotes", "Arrival & Finish Effects", "Coins", "Gems"
-        )
-
-        val scroll = ScrollView(context)
-        val list = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(12), dp(8), dp(12), dp(12))
-        }
-
-        categories.forEach { category ->
-            list.addView(
-                createButton(
-                    (if (shopCategory == category) "✓  " else "") + category,
-                    12f
-                ) {
-                    shopCategory = category
-                    showShop()
-                },
-                LinearLayout.LayoutParams(-1, dp(40)).apply {
-                    bottomMargin = dp(5)
-                }
-            )
-        }
-
-        val description = when (shopCategory) {
-            "Coins" -> "Race Coins are planned as gameplay rewards."
-            "Gems" -> "Gems are premium credits. Purchases are not connected yet."
-            "Car Skins" -> "Selected paint: ${skinNames[skinIndex]}."
-            "Vehicle Effects" ->
-                "Neon effects are ${if (effectsEnabled) "enabled" else "disabled"}."
-            "Emotes" -> "Selected driver emote: ${emoteNames[emoteIndex]}."
-            else -> "$shopCategory will contain unlockable items as the shop is developed."
-        }
-
-        list.addView(
-            createText(description, 12f, Color.WHITE, false).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(-1, dp(60))
-        )
-
-        scroll.addView(list)
-
-        root.addView(
-            scroll,
-            frameParams(-1, -1).apply {
-                topMargin = dp(96)
-                bottomMargin = dp(58)
-            }
-        )
-
-        addBackButton(root)
-    }
-
-    private fun showFriends() {
-        currentScreen = Screen.FRIENDS
-        resetContent()
-        addBackground(false)
-
-        val root = makePage("FRIENDS & TEAM")
-
-        root.addView(
-            createText(
-                "Invite friends to your team. Maximum team size: 4.",
-                12f, Color.WHITE, false
-            ),
-            frameParams(-1, 46).apply {
-                topMargin = dp(62)
+            model,
+            params(-1, -1).apply {
+                topMargin = dp(91)
                 leftMargin = dp(12)
                 rightMargin = dp(12)
+                bottomMargin = dp(184)
             }
         )
 
-        listOf("Alex • ONLINE", "Mike • ONLINE", "John • OFFLINE")
-            .forEachIndexed { index, friend ->
-                val online = friend.contains("ONLINE")
-
-                root.addView(
-                    createButton("👤 $friend", 12f) {
-                        if (!online) {
-                            Toast.makeText(
-                                context,
-                                "This friend is offline.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else if (teamPlayers >= 4) {
-                            Toast.makeText(
-                                context,
-                                "Your team is full.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            showInviteConfirmation(friend.substringBefore(" •"))
-                        }
-                    },
-                    frameParams(-1, 48).apply {
-                        topMargin = dp(120 + index * 58)
-                        leftMargin = dp(12)
-                        rightMargin = dp(12)
-                    }
-                )
+        root.addView(
+            label("OWNED CHARACTER ITEMS", 12f, Color.WHITE, true),
+            params(-1, 27, Gravity.BOTTOM).apply {
+                bottomMargin = dp(154)
             }
+        )
 
-        addBackButton(root)
-    }
-
-    private fun showInviteConfirmation(friend: String) {
-        AlertDialog.Builder(context)
-            .setTitle("Invite $friend?")
-            .setMessage(
-                "This is a local invitation preview. Real invitations between phones need an online backend."
-            )
-            .setNegativeButton("CANCEL", null)
-            .setPositiveButton("INVITE") { _, _ ->
-                if (teamPlayers < 4) teamPlayers++
-                Toast.makeText(
-                    context,
-                    "Local invite preview sent.",
-                    Toast.LENGTH_SHORT
-                ).show()
-                showLobby()
-            }
-            .show()
-    }
-
-    private fun showInvitePopup(root: FrameLayout) {
-        val popup = LinearLayout(context).apply {
+        val items = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(10), dp(8), dp(10), dp(8))
-            background = roundedBackground(
-                Color.rgb(8, 20, 40), neon, 2
+            background = rounded(
+                Color.argb(235, 5, 13, 29),
+                cyan,
+                1
             )
+            setPadding(dp(8), dp(5), dp(8), dp(5))
         }
 
-        popup.addView(
-            createText("TEAM INVITATION", 12f, neon, true),
-            LinearLayout.LayoutParams(-1, dp(24))
+        items.addView(
+            label("✓ Casual Character • EQUIPPED", 11f, Color.WHITE, true),
+            LinearLayout.LayoutParams(-1, dp(30))
         )
 
-        popup.addView(
-            createText(
-                "$pendingInviteName invited you to join their team.",
-                11f, Color.WHITE, false
-            ),
-            LinearLayout.LayoutParams(-1, dp(40))
+        items.addView(
+            label("Outfits: 1 owned     Emotes: 0 unlocked", 10f, Color.LTGRAY),
+            LinearLayout.LayoutParams(-1, dp(29))
         )
 
-        val buttons = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-        }
-
-        buttons.addView(
-            createButton("ACCEPT", 10f) {
-                pendingInvite = false
-                if (teamPlayers < 4) teamPlayers++
-                showLobby()
-            },
-            LinearLayout.LayoutParams(0, dp(34), 1f)
+        items.addView(
+            label("Locked cosmetics belong in the Shop.", 10f, gold),
+            LinearLayout.LayoutParams(-1, dp(27))
         )
-
-        buttons.addView(
-            createButton("DECLINE", 10f) {
-                pendingInvite = false
-                showLobby()
-            },
-            LinearLayout.LayoutParams(0, dp(34), 1f)
-        )
-
-        popup.addView(buttons)
 
         root.addView(
-            popup,
-            frameParams(230, 115, Gravity.TOP or Gravity.END).apply {
-                topMargin = dp(60)
+            items,
+            params(-1, 94, Gravity.BOTTOM).apply {
+                leftMargin = dp(12)
+                rightMargin = dp(12)
+                bottomMargin = dp(54)
+            }
+        )
+
+        addBottomBack(root)
+    }
+
+    // ---------------------------------------------------------
+    // VEHICLE GARAGE - REAL 3D CAR MODEL
+    // ---------------------------------------------------------
+
+    private fun showGarage() {
+        currentScreen = Screen.GARAGE
+        clear()
+        setCityBackground(false)
+
+        val root = pageRoot("VEHICLE GARAGE")
+
+        root.addView(
+            label("YOUR VEHICLES • SPORTS CAR", 11f, cyan, true),
+            params(-1, 30).apply { topMargin = dp(58) }
+        )
+
+        val model = ModelPreviewView(
+            context,
+            "cars/Sports Car.glb"
+        )
+
+        root.addView(
+            model,
+            params(-1, -1).apply {
+                topMargin = dp(91)
+                leftMargin = dp(12)
+                rightMargin = dp(12)
+                bottomMargin = dp(190)
+            }
+        )
+
+        root.addView(
+            label("OWNED VEHICLES", 12f, Color.WHITE, true),
+            params(-1, 27, Gravity.BOTTOM).apply {
+                bottomMargin = dp(158)
+            }
+        )
+
+        val owned = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            background = rounded(
+                Color.argb(235, 5, 13, 29),
+                cyan,
+                1
+            )
+            setPadding(dp(8), dp(5), dp(8), dp(5))
+        }
+
+        owned.addView(
+            label("✓ Sports Car • SELECTED", 11f, Color.WHITE, true),
+            LinearLayout.LayoutParams(-1, dp(30))
+        )
+
+        owned.addView(
+            label("Vehicle skins: 0 unlocked", 10f, Color.LTGRAY),
+            LinearLayout.LayoutParams(-1, dp(28))
+        )
+
+        owned.addView(
+            button("VEHICLE SHOP") {
+                shopCategory = "Cars"
+                showShop()
+            },
+            LinearLayout.LayoutParams(-1, dp(34))
+        )
+
+        root.addView(
+            owned,
+            params(-1, 98, Gravity.BOTTOM).apply {
+                leftMargin = dp(12)
+                rightMargin = dp(12)
+                bottomMargin = dp(54)
+            }
+        )
+
+        addBottomBack(root)
+    }
+
+    // ---------------------------------------------------------
+    // COMMON PAGE LAYOUT
+    // ---------------------------------------------------------
+
+    private fun pageRoot(title: String): FrameLayout {
+        val root = FrameLayout(context)
+        content.addView(root, fullParams())
+
+        root.addView(
+            label(title, 17f, Color.WHITE, true).apply {
+                background = rounded(
+                    Color.argb(235, 5, 14, 30),
+                    cyan,
+                    1
+                )
+            },
+            params(-1, 46).apply {
+                leftMargin = dp(10)
                 rightMargin = dp(10)
+                topMargin = dp(8)
+            }
+        )
+
+        return root
+    }
+
+    private fun addBottomBack(root: FrameLayout) {
+        root.addView(
+            button("← BACK TO LOBBY") { showLobby() },
+            params(-1, 42, Gravity.BOTTOM).apply {
+                leftMargin = dp(12)
+                rightMargin = dp(12)
+                bottomMargin = dp(7)
             }
         )
     }
 
-    private fun showProfile() {
-        currentScreen = Screen.PROFILE
-        resetContent()
-        addBackground(false)
+    // ---------------------------------------------------------
+    // SELECT MODE
+    // ---------------------------------------------------------
 
-        val root = makePage("PLAYER PROFILE")
+    private fun showMode() {
+        currentScreen = Screen.MODE
+        clear()
+        setCityBackground(false)
 
-        root.addView(
-            createText("👤", 55f, Color.WHITE, false).apply {
-                gravity = Gravity.CENTER
-            },
-            frameParams(-1, 90).apply { topMargin = dp(74) }
-        )
+        val root = pageRoot("SELECT GAME MODE")
 
-        root.addView(
-            createText("ADAM", 22f, Color.WHITE, true).apply {
-                gravity = Gravity.CENTER
-            },
-            frameParams(-1, 42).apply { topMargin = dp(164) }
-        )
-
-        root.addView(
-            createText(
-                "LEVEL 1\nRace Coins: $coins\nGems: $gems",
-                14f, Color.WHITE, false
-            ).apply {
-                gravity = Gravity.CENTER
-            },
-            frameParams(-1, 100).apply { topMargin = dp(210) }
-        )
-
-        addBackButton(root)
-    }
-
-    private fun showModeMenu() {
-        currentScreen = Screen.MODE_MENU
-        resetContent()
-        addBackground(false)
-
-        val root = makePage("SELECT MODE")
-
-        listOf(
+        val options = listOf(
             "QUICK RACE",
             "ONLINE RACE",
             "HEIST",
             "PRIVATE LOBBY",
             "SPECIAL EVENTS"
-        ).forEachIndexed { index, mode ->
+        )
+
+        options.forEachIndexed { index, mode ->
             root.addView(
-                createButton(
-                    (if (selectedMode == mode) "✓  " else "") + mode,
-                    12f
+                button(
+                    (if (selectedMode == mode) "✓  " else "") + mode
                 ) {
                     selectedMode = mode
-                    showModeMenu()
+                    showMode()
                 },
-                frameParams(-1, 47).apply {
-                    topMargin = dp(72 + index * 54)
+                params(-1, 45).apply {
+                    topMargin = dp(67 + index * 53)
                     leftMargin = dp(12)
                     rightMargin = dp(12)
                 }
@@ -770,182 +612,252 @@ class GameScreen(context: Context) : FrameLayout(context) {
         }
 
         root.addView(
-            createButton("CONTINUE", 12f) { showRaceStarting() },
-            frameParams(-1, 46, Gravity.BOTTOM).apply {
+            label("Selected: $selectedMode", 11f, cyan, true),
+            params(-1, 34, Gravity.BOTTOM).apply {
                 bottomMargin = dp(64)
-                leftMargin = dp(12)
-                rightMargin = dp(12)
             }
         )
 
-        addBackButton(root)
+        root.addView(
+            button("CONFIRM MODE") {
+                Toast.makeText(
+                    context,
+                    "$selectedMode selected. Racing and matchmaking are not connected yet.",
+                    Toast.LENGTH_LONG
+                ).show()
+                showLobby()
+            },
+            params(-1, 43, Gravity.BOTTOM).apply {
+                leftMargin = dp(12)
+                rightMargin = dp(12)
+                bottomMargin = dp(14)
+            }
+        )
     }
 
-    private fun showRaceStarting() {
-        currentScreen = Screen.RACE_STARTING
-        resetContent()
-        addBackground()
+    // ---------------------------------------------------------
+    // SHOP - LOCKED ITEMS ARE SEPARATE FROM OWNED INVENTORY
+    // ---------------------------------------------------------
 
-        val panel = LinearLayout(context).apply {
+    private fun showShop() {
+        currentScreen = Screen.SHOP
+        clear()
+        setCityBackground(false)
+
+        val root = pageRoot("SHOP")
+
+        root.addView(
+            label("◈ $coins Race Coins     ◆ $gems Gems", 12f, gold, true),
+            params(-1, 35).apply { topMargin = dp(57) }
+        )
+
+        val categories = listOf(
+            "Cars",
+            "Drivers",
+            "Car Skins",
+            "Vehicle Effects",
+            "Emotes",
+            "Arrival & Finish Effects",
+            "Coins",
+            "Gems"
+        )
+
+        val scroll = ScrollView(context)
+        val list = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setPadding(dp(18), dp(18), dp(18), dp(18))
-            background = roundedBackground(
-                Color.argb(230, 5, 15, 32), neon, 2
+            setPadding(dp(12), dp(5), dp(12), dp(12))
+        }
+
+        categories.forEach { category ->
+            list.addView(
+                button(
+                    (if (shopCategory == category) "✓  " else "") + category
+                ) {
+                    shopCategory = category
+                    showShop()
+                },
+                LinearLayout.LayoutParams(-1, dp(41)).apply {
+                    bottomMargin = dp(5)
+                }
             )
         }
 
-        panel.addView(
-            createText("RACE READY", 23f, Color.WHITE, true).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(-1, dp(44))
+        val note = when (shopCategory) {
+            "Coins" ->
+                "Race Coins are intended to be earned through gameplay."
+
+            "Gems" ->
+                "Gems are premium credits. Real-money purchases are not connected."
+
+            "Drivers" ->
+                "Character models and outfits will appear here as unlockable items."
+
+            "Car Skins" ->
+                "Owned vehicle skins and locked skins will be shown separately."
+
+            else ->
+                "$shopCategory: items and purchases are not connected yet."
+        }
+
+        list.addView(
+            label(note, 11f, Color.LTGRAY),
+            LinearLayout.LayoutParams(-1, dp(75))
         )
 
-        panel.addView(
-            createText("MODE: $selectedMode", 13f, neon, true).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(-1, dp(36))
-        )
-
-        panel.addView(
-            createText(
-                "This is a UI preview. Actual racing, matchmaking and online gameplay are not connected yet.",
-                12f, Color.WHITE, false
-            ).apply {
-                gravity = Gravity.CENTER
-            },
-            LinearLayout.LayoutParams(-1, dp(84))
-        )
-
-        panel.addView(
-            createButton("BACK TO LOBBY", 12f) { showLobby() },
-            LinearLayout.LayoutParams(-1, dp(42))
-        )
-
-        content.addView(panel, frameParams(300, 250, Gravity.CENTER))
-    }
-
-    private fun showInfoPage(title: String, message: String) {
-        currentScreen = Screen.INFO
-        resetContent()
-        addBackground(false)
-
-        val root = makePage(title)
+        scroll.addView(list)
 
         root.addView(
-            createText(message, 14f, Color.WHITE, false).apply {
-                gravity = Gravity.CENTER
-                setPadding(dp(20), dp(10), dp(20), dp(10))
-            },
-            frameParams(-1, 180, Gravity.CENTER)
-        )
-
-        addBackButton(root)
-    }
-
-    private fun makePage(title: String): FrameLayout {
-        val root = FrameLayout(context)
-        content.addView(root, fullParams())
-
-        root.addView(
-            createText(title, 20f, Color.WHITE, true).apply {
-                gravity = Gravity.CENTER
-                background = roundedBackground(
-                    Color.argb(220, 5, 15, 32), neon, 1
-                )
-            },
-            frameParams(-1, 46).apply {
-                leftMargin = dp(12)
-                rightMargin = dp(12)
-                topMargin = dp(10)
+            scroll,
+            params(-1, -1).apply {
+                topMargin = dp(96)
+                bottomMargin = dp(55)
             }
         )
 
-        return root
+        addBottomBack(root)
     }
 
-    private fun addPageButton(
-        root: FrameLayout,
-        label: String,
-        action: () -> Unit
-    ) {
-        val index = pageButtonCount++
+    // ---------------------------------------------------------
+    // FRIENDS AND TEAM
+    // ---------------------------------------------------------
+
+    private fun showFriends() {
+        currentScreen = Screen.FRIENDS
+        clear()
+        setCityBackground(false)
+
+        val root = pageRoot("FRIENDS & CREW")
 
         root.addView(
-            createButton(label, 13f, action),
-            frameParams(-1, 47).apply {
-                topMargin = dp(70 + index * 54)
-                leftMargin = dp(12)
-                rightMargin = dp(12)
-            }
+            label(
+                "Invite friends to your team. Maximum 4 players.",
+                11f,
+                Color.WHITE
+            ),
+            params(-1, 38).apply { topMargin = dp(58) }
         )
+
+        listOf(
+            "Alex • ONLINE",
+            "Mike • ONLINE",
+            "John • OFFLINE"
+        ).forEachIndexed { index, friend ->
+            root.addView(
+                button(friend) {
+                    if (friend.contains("OFFLINE")) {
+                        Toast.makeText(
+                            context,
+                            "Friend is offline.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else if (teamSize >= 4) {
+                        Toast.makeText(
+                            context,
+                            "Your team is full.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        AlertDialog.Builder(context)
+                            .setTitle("Invite ${friend.substringBefore(" •")}?")
+                            .setMessage(
+                                "This is a local preview. Online invites need a multiplayer backend."
+                            )
+                            .setNegativeButton("CANCEL", null)
+                            .setPositiveButton("INVITE") { _, _ ->
+                                teamSize++
+                                showFriends()
+                            }
+                            .show()
+                    }
+                },
+                params(-1, 47).apply {
+                    topMargin = dp(105 + index * 55)
+                    leftMargin = dp(12)
+                    rightMargin = dp(12)
+                }
+            )
+        }
+
+        addBottomBack(root)
     }
 
-    private fun addBackButton(root: FrameLayout) {
+    // ---------------------------------------------------------
+    // SETTINGS
+    // ---------------------------------------------------------
+
+    private fun showSettings() {
+        currentScreen = Screen.SETTINGS
+        clear()
+        setCityBackground(false)
+
+        val root = pageRoot("SETTINGS")
+
+        val settings = listOf(
+            "Gameplay",
+            "Controls",
+            "Graphics",
+            "Sound",
+            "Account"
+        )
+
+        settings.forEachIndexed { index, item ->
+            root.addView(
+                button(item) {
+                    Toast.makeText(
+                        context,
+                        "$item settings will be connected in a later step.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                },
+                params(-1, 47).apply {
+                    topMargin = dp(70 + index * 55)
+                    leftMargin = dp(12)
+                    rightMargin = dp(12)
+                }
+            )
+        }
+
+        addBottomBack(root)
+    }
+
+    // ---------------------------------------------------------
+    // PLAYER PROFILE
+    // ---------------------------------------------------------
+
+    private fun showProfile() {
+        currentScreen = Screen.PROFILE
+        clear()
+        setCityBackground(false)
+
+        val root = pageRoot("PLAYER PROFILE")
+
         root.addView(
-            createButton("← BACK", 11f) {
-                pageButtonCount = 0
-                showLobby()
-            },
-            frameParams(105, 40, Gravity.BOTTOM or Gravity.START).apply {
-                leftMargin = dp(12)
-                bottomMargin = dp(12)
-            }
+            label("ADAM", 25f, Color.WHITE, true),
+            params(-1, 55).apply { topMargin = dp(78) }
         )
-    }
 
-    private fun createText(
-        value: String,
-        size: Float,
-        color: Int,
-        bold: Boolean
-    ): TextView = TextView(context).apply {
-        text = value
-        textSize = size
-        setTextColor(color)
-        gravity = Gravity.CENTER_VERTICAL
-        typeface = Typeface.create(
-            "sans-serif",
-            if (bold) Typeface.BOLD else Typeface.NORMAL
+        root.addView(
+            label(
+                "LEVEL 1\nRace Coins: $coins\nGems: $gems",
+                14f,
+                Color.LTGRAY
+            ),
+            params(-1, 115).apply { topMargin = dp(140) }
         )
-        setPadding(dp(4), dp(2), dp(4), dp(2))
+
+        addBottomBack(root)
     }
 
-    private fun createButton(
-        label: String,
-        size: Float = 13f,
-        action: () -> Unit
-    ): TextView = TextView(context).apply {
-        text = label
-        textSize = size
-        typeface = Typeface.create("sans-serif", Typeface.BOLD)
-        setTextColor(Color.WHITE)
-        gravity = Gravity.CENTER
-        isClickable = true
-        isFocusable = true
-        setPadding(dp(5), dp(4), dp(5), dp(4))
-        background = roundedBackground(
-            Color.argb(225, 5, 19, 38), neon, 1
-        )
-        setOnClickListener { action() }
-    }
+    // ---------------------------------------------------------
+    // CITY BACKGROUND - NO GARAGE OR DRAWN CAR
+    // ---------------------------------------------------------
 
-    private fun roundedBackground(
-        fillColor: Int,
-        strokeColor: Int,
-        strokeWidth: Int
-    ) = GradientDrawable().apply {
-        shape = GradientDrawable.RECTANGLE
-        cornerRadius = dp(9).toFloat()
-        setColor(fillColor)
-        if (strokeWidth > 0) setStroke(dp(strokeWidth), strokeColor)
-    }
+    private inner class CityBackground(
+        context: Context
+    ) : View(context) {
 
-    // Custom garage illustration.
-    private inner class GarageBackgroundView(context: Context) : View(context) {
-        var showRoad = true
+        var showCity = true
+
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
         override fun onDraw(canvas: Canvas) {
@@ -953,496 +865,89 @@ class GameScreen(context: Context) : FrameLayout(context) {
 
             val w = width.toFloat()
             val h = height.toFloat()
+
             if (w <= 0f || h <= 0f) return
 
             paint.shader = LinearGradient(
-                0f, 0f, 0f, h,
+                0f,
+                0f,
+                0f,
+                h,
                 intArrayOf(
-                    Color.rgb(3, 7, 19),
-                    Color.rgb(8, 17, 37),
-                    Color.rgb(4, 10, 23)
+                    Color.rgb(3, 7, 21),
+                    Color.rgb(10, 24, 48),
+                    Color.rgb(4, 9, 22)
                 ),
                 null,
                 Shader.TileMode.CLAMP
             )
+
             canvas.drawRect(0f, 0f, w, h, paint)
             paint.shader = null
 
-            // Tall garage walls and structural beams.
-            paint.color = Color.rgb(8, 15, 31)
-            canvas.drawRect(0f, h * 0.12f, w, h * 0.59f, paint)
+            if (!showCity) return
 
-            paint.color = Color.rgb(16, 27, 45)
-            canvas.drawRect(0f, h * 0.14f, w, h * 0.17f, paint)
-            canvas.drawRect(0f, h * 0.47f, w, h * 0.49f, paint)
+            // Distant city skyline.
+            paint.color = Color.rgb(8, 18, 36)
 
-            for (i in 0..7) {
-                val x = w * i / 7f
-                paint.color = Color.rgb(15, 27, 44)
-                canvas.drawRect(x, h * 0.15f, x + dp(5), h * 0.59f, paint)
-            }
+            val skylineY = h * 0.42f
+            val buildings = 12
 
-            // Neon roof strips.
-            paint.color = Color.rgb(0, 165, 215)
-            canvas.drawRect(w * 0.08f, h * 0.12f, w * 0.42f, h * 0.126f, paint)
-            paint.color = Color.rgb(235, 35, 75)
-            canvas.drawRect(w * 0.58f, h * 0.12f, w * 0.92f, h * 0.126f, paint)
+            for (i in 0 until buildings) {
+                val x = w * i / buildings
+                val buildingWidth = w / buildings + dp(3)
+                val buildingHeight =
+                    h * (0.12f + ((i * 17) % 23) / 100f)
 
-            // Garage door panels.
-            paint.color = Color.rgb(6, 12, 25)
-            canvas.drawRoundRect(
-                RectF(w * 0.05f, h * 0.21f, w * 0.39f, h * 0.55f),
-                dp(5).toFloat(), dp(5).toFloat(), paint
-            )
-            canvas.drawRoundRect(
-                RectF(w * 0.61f, h * 0.21f, w * 0.95f, h * 0.55f),
-                dp(5).toFloat(), dp(5).toFloat(), paint
-            )
-
-            for (i in 0..5) {
-                val y = h * (0.25f + i * 0.045f)
-                paint.color = Color.rgb(20, 35, 55)
-                canvas.drawRect(w * 0.06f, y, w * 0.38f, y + dp(2), paint)
-                canvas.drawRect(w * 0.62f, y, w * 0.94f, y + dp(2), paint)
-            }
-
-            // Floor.
-            paint.shader = LinearGradient(
-                0f, h * 0.53f, 0f, h,
-                Color.rgb(13, 25, 43),
-                Color.rgb(2, 5, 13),
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawRect(0f, h * 0.53f, w, h, paint)
-            paint.shader = null
-
-            // Perspective floor markings.
-            for (i in 0..12) {
-                val y = h * (0.58f + i * 0.036f)
-                val half = w * (0.12f + i * 0.055f)
-                paint.color = if (i % 3 == 0) {
-                    Color.argb(90, 0, 190, 255)
-                } else {
-                    Color.argb(32, 100, 150, 190)
-                }
-                canvas.drawLine(
-                    w / 2f - half, y,
-                    w / 2f + half, y,
+                canvas.drawRect(
+                    x,
+                    skylineY - buildingHeight,
+                    x + buildingWidth,
+                    h * 0.88f,
                     paint
                 )
+
+                paint.color = if (i % 3 == 0) {
+                    Color.rgb(0, 83, 112)
+                } else {
+                    Color.rgb(16, 39, 62)
+                }
+
+                for (row in 0..3) {
+                    canvas.drawRect(
+                        x + dp(5),
+                        skylineY - buildingHeight + dp(9 + row * 15),
+                        x + dp(9),
+                        skylineY - buildingHeight + dp(14 + row * 15),
+                        paint
+                    )
+                }
+
+                paint.color = Color.rgb(8, 18, 36)
             }
 
-            paint.color = Color.argb(140, 0, 200, 255)
-            paint.strokeWidth = dp(2).toFloat()
-            canvas.drawLine(0f, h * 0.62f, w * 0.26f, h * 0.62f, paint)
-            canvas.drawLine(w * 0.74f, h * 0.62f, w, h * 0.62f, paint)
-
-            if (showRoad) {
-                paint.color = Color.rgb(8, 12, 22)
-                canvas.drawRect(0f, h * 0.72f, w, h, paint)
-            }
-
-            paint.shader = RadialGradient(
-                w / 2f, h / 2f, max(w, h) * 0.72f,
-                intArrayOf(Color.TRANSPARENT, Color.argb(150, 0, 0, 0)),
-                null,
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawRect(0f, 0f, w, h, paint)
-            paint.shader = null
-        }
-    }
-
-    // Drawn supercar, driver pose, paint skin, and neon effects.
-    private inner class NeonGarageStage(context: Context) : View(context) {
-        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
-        private var dragX = 0f
-        private var rotation = 0f
-
-        override fun onDraw(canvas: Canvas) {
-            super.onDraw(canvas)
-
-            val w = width.toFloat()
-            val h = height.toFloat()
-            if (w <= 0f || h <= 0f) return
-
-            // Stage spotlight.
-            p.shader = RadialGradient(
-                w * 0.47f, h * 0.55f, min(w, h) * 0.65f,
-                intArrayOf(
-                    Color.argb(75, 0, 160, 220),
-                    Color.argb(25, 0, 70, 120),
-                    Color.TRANSPARENT
-                ),
-                null,
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawRect(0f, 0f, w, h, p)
-            p.shader = null
-
-            // A slight side/front change when swiping rotates the display.
-            val perspective = cos(Math.toRadians(rotation.toDouble())).toFloat()
-            val carScaleX = 0.72f + abs(perspective) * 0.28f
-            val centerX = w * 0.50f
-            val carY = h * 0.68f
-
-            canvas.save()
-            canvas.translate(centerX, carY)
-            canvas.scale(carScaleX, 1f)
-            canvas.translate(-centerX, -carY)
-
-            drawCar(canvas, centerX, carY, w, h)
-
-            canvas.restore()
-
-            drawDriver(canvas, w * 0.25f, h * 0.58f)
-
-            // Floor glow under the car.
-            if (effectsEnabled) {
-                p.color = skinColors[skinIndex]
-                p.alpha = 70
-                p.style = Paint.Style.STROKE
-                p.strokeWidth = dp(3).toFloat()
-                canvas.drawOval(
-                    RectF(w * 0.16f, h * 0.77f, w * 0.82f, h * 0.91f),
-                    p
-                )
-                p.alpha = 255
-                p.style = Paint.Style.FILL
-            }
-
-            p.color = Color.WHITE
-            p.textSize = dp(10).toFloat()
-            p.typeface = Typeface.create("sans-serif", Typeface.BOLD)
-            canvas.drawText("PREMIUM SUPERCAR", dp(10).toFloat(), h - dp(24).toFloat(), p)
-
-            p.color = skinColors[skinIndex]
-            p.textSize = dp(8).toFloat()
-            canvas.drawText(
-                "${skinNames[skinIndex]}  •  DRAG TO ROTATE",
-                dp(10).toFloat(),
-                h - dp(10).toFloat(),
-                p
-            )
-        }
-
-        private fun drawCar(
-            canvas: Canvas,
-            cx: Float,
-            cy: Float,
-            w: Float,
-            h: Float
-        ) {
-            val bodyColor = skinColors[skinIndex]
-            val carW = min(w * 0.75f, dp(350).toFloat())
-            val carH = min(h * 0.30f, dp(112).toFloat())
-            val left = cx - carW / 2f
-            val right = cx + carW / 2f
-            val top = cy - carH * 0.56f
-            val bottom = cy + carH * 0.30f
-
-            // Shadow.
-            p.color = Color.argb(150, 0, 0, 0)
-            canvas.drawOval(
-                RectF(left - dp(8), bottom - dp(1), right + dp(8), bottom + dp(24)),
-                p
-            )
-
-            // Neon ground reflection.
-            if (effectsEnabled) {
-                p.color = bodyColor
-                p.alpha = 65
-                canvas.drawOval(
-                    RectF(left + dp(12), bottom, right - dp(12), bottom + dp(16)),
-                    p
-                )
-                p.alpha = 255
-            }
-
-            // Wheels behind body.
-            p.color = Color.rgb(2, 4, 8)
-            canvas.drawRoundRect(
-                RectF(left + carW * 0.13f, cy, left + carW * 0.30f, bottom + dp(13)),
-                dp(10).toFloat(), dp(10).toFloat(), p
-            )
-            canvas.drawRoundRect(
-                RectF(right - carW * 0.30f, cy, right - carW * 0.13f, bottom + dp(13)),
-                dp(10).toFloat(), dp(10).toFloat(), p
-            )
-
-            p.color = Color.rgb(95, 115, 135)
-            canvas.drawCircle(left + carW * 0.22f, bottom + dp(1), dp(11).toFloat(), p)
-            canvas.drawCircle(right - carW * 0.22f, bottom + dp(1), dp(11).toFloat(), p)
-
-            p.color = Color.rgb(15, 22, 32)
-            canvas.drawCircle(left + carW * 0.22f, bottom + dp(1), dp(6).toFloat(), p)
-            canvas.drawCircle(right - carW * 0.22f, bottom + dp(1), dp(6).toFloat(), p)
-
-            // Low, wide supercar body.
-            val body = Path().apply {
-                moveTo(left, cy - carH * 0.02f)
-                lineTo(left + carW * 0.06f, cy - carH * 0.30f)
-                lineTo(left + carW * 0.23f, top + carH * 0.12f)
-                lineTo(left + carW * 0.38f, top)
-                lineTo(left + carW * 0.67f, top + carH * 0.02f)
-                lineTo(left + carW * 0.84f, cy - carH * 0.20f)
-                lineTo(right - carW * 0.04f, cy - carH * 0.06f)
-                lineTo(right, cy + carH * 0.13f)
-                lineTo(right - carW * 0.05f, bottom)
-                lineTo(left + carW * 0.08f, bottom)
-                close()
-            }
-
-            p.shader = LinearGradient(
-                left, top, right, bottom,
-                intArrayOf(
-                    Color.rgb(220, 238, 250),
-                    bodyColor,
-                    Color.rgb(15, 35, 55)
-                ),
-                null,
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawPath(body, p)
-            p.shader = null
-
-            // Dark lower side skirt.
-            p.color = Color.rgb(7, 12, 22)
-            val skirt = Path().apply {
-                moveTo(left + carW * 0.08f, cy + carH * 0.13f)
-                lineTo(right - carW * 0.04f, cy + carH * 0.12f)
-                lineTo(right - carW * 0.09f, bottom)
-                lineTo(left + carW * 0.12f, bottom)
-                close()
-            }
-            canvas.drawPath(skirt, p)
-
-            // Windshield and roof glass.
-            p.color = Color.rgb(5, 18, 33)
-            val glass = Path().apply {
-                moveTo(left + carW * 0.29f, top + carH * 0.12f)
-                lineTo(left + carW * 0.40f, top + carH * 0.05f)
-                lineTo(left + carW * 0.63f, top + carH * 0.06f)
-                lineTo(left + carW * 0.73f, cy - carH * 0.18f)
-                lineTo(left + carW * 0.33f, cy - carH * 0.18f)
-                close()
-            }
-            canvas.drawPath(glass, p)
-
-            // Glass highlights.
-            p.color = Color.argb(150, 90, 200, 240)
-            p.strokeWidth = dp(1).toFloat()
-            p.style = Paint.Style.STROKE
-            canvas.drawLine(
-                left + carW * 0.40f, top + carH * 0.10f,
-                left + carW * 0.34f, cy - carH * 0.19f, p
-            )
-            canvas.drawLine(
-                left + carW * 0.63f, top + carH * 0.10f,
-                left + carW * 0.70f, cy - carH * 0.18f, p
-            )
-            p.style = Paint.Style.FILL
-
-            // Front splitter.
-            p.color = Color.rgb(2, 5, 12)
-            canvas.drawRoundRect(
-                RectF(left - dp(4), cy + carH * 0.10f, left + carW * 0.18f, cy + carH * 0.22f),
-                dp(3).toFloat(), dp(3).toFloat(), p
-            )
-
-            // Headlights.
-            p.color = Color.WHITE
-            canvas.drawRoundRect(
-                RectF(left + carW * 0.04f, cy - carH * 0.04f, left + carW * 0.19f, cy + carH * 0.01f),
-                dp(3).toFloat(), dp(3).toFloat(), p
-            )
-            canvas.drawRoundRect(
-                RectF(right - carW * 0.18f, cy - carH * 0.04f, right - carW * 0.04f, cy + carH * 0.01f),
-                dp(3).toFloat(), dp(3).toFloat(), p
-            )
-
-            if (effectsEnabled) {
-                p.color = bodyColor
-                p.alpha = 175
-                p.strokeWidth = dp(2).toFloat()
-                p.style = Paint.Style.STROKE
-                canvas.drawPath(body, p)
-                p.style = Paint.Style.FILL
-                p.alpha = 255
-            }
-
-            // Front grille.
-            p.color = Color.rgb(2, 5, 11)
-            canvas.drawRoundRect(
-                RectF(left + carW * 0.37f, cy + carH * 0.06f, left + carW * 0.68f, cy + carH * 0.16f),
-                dp(4).toFloat(), dp(4).toFloat(), p
-            )
-
-            // Side vents.
-            p.color = Color.rgb(0, 8, 18)
+            // Neon horizon.
+            paint.color = Color.argb(70, 0, 190, 255)
             canvas.drawRect(
-                left + carW * 0.74f, cy + carH * 0.01f,
-                left + carW * 0.82f, cy + carH * 0.09f, p
+                0f,
+                h * 0.66f,
+                w,
+                h * 0.665f,
+                paint
             )
 
-            // Small rear wing.
-            p.color = Color.rgb(9, 16, 27)
-            canvas.drawRect(
-                left + carW * 0.76f, top + carH * 0.02f,
-                left + carW * 0.96f, top + carH * 0.08f, p
-            )
-            canvas.drawRect(
-                left + carW * 0.80f, top + carH * 0.08f,
-                left + carW * 0.83f, top + carH * 0.20f, p
-            )
-            canvas.drawRect(
-                left + carW * 0.91f, top + carH * 0.08f,
-                left + carW * 0.94f, top + carH * 0.20f, p
-            )
-        }
+            // Distant road perspective.
+            paint.color = Color.rgb(16, 28, 45)
+            val roadTop = h * 0.70f
+            canvas.drawRect(0f, roadTop, w, h, paint)
 
-        private fun drawDriver(canvas: Canvas, x: Float, y: Float) {
-            val scale = resources.displayMetrics.density
-            val head = dp(10).toFloat()
-            val torsoTop = y + dp(14)
-            val torsoBottom = y + dp(47)
+            paint.color = Color.rgb(0, 95, 125)
+            canvas.drawLine(w * 0.5f, roadTop, 0f, h, paint)
+            canvas.drawLine(w * 0.5f, roadTop, w, h, paint)
 
-            p.strokeWidth = dp(5).toFloat()
-            p.strokeCap = Paint.Cap.ROUND
-            p.color = Color.rgb(225, 230, 240)
-
-            // Head and visor.
-            p.color = Color.rgb(220, 180, 145)
-            canvas.drawCircle(x, y, head, p)
-
-            p.color = Color.rgb(8, 16, 29)
-            canvas.drawArc(
-                RectF(x - head, y - head, x + head, y + head),
-                185f, 175f, false, p
-            )
-
-            // Driver torso.
-            p.color = skinColors[skinIndex]
-            canvas.drawRoundRect(
-                RectF(x - dp(10), torsoTop, x + dp(10), torsoBottom),
-                dp(5).toFloat(), dp(5).toFloat(), p
-            )
-
-            when (poseIndex) {
-                0 -> {
-                    // Standing: arms out slightly and legs apart.
-                    p.color = Color.rgb(220, 230, 240)
-                    canvas.drawLine(
-                        x - dp(6).toFloat(), y + dp(22).toFloat(),
-                        x - dp(19).toFloat(), y + dp(39).toFloat(), p
-                    )
-                    canvas.drawLine(
-                        x + dp(6).toFloat(), y + dp(22).toFloat(),
-                        x + dp(18).toFloat(), y + dp(36).toFloat(), p
-                    )
-                    canvas.drawLine(
-                        x - dp(5).toFloat(), torsoBottom,
-                        x - dp(12).toFloat(), y + dp(65).toFloat(), p
-                    )
-                    canvas.drawLine(
-                        x + dp(5).toFloat(), torsoBottom,
-                        x + dp(12).toFloat(), y + dp(65).toFloat(), p
-                    )
-                }
-
-                1 -> {
-                    // Sitting pose, legs extended toward the car.
-                    p.color = Color.rgb(220, 230, 240)
-                    canvas.drawLine(
-                        x - dp(6).toFloat(), y + dp(22).toFloat(),
-                        x - dp(18).toFloat(), y + dp(37).toFloat(), p
-                    )
-                    canvas.drawLine(
-                        x + dp(6).toFloat(), y + dp(22).toFloat(),
-                        x + dp(18).toFloat(), y + dp(35).toFloat(), p
-                    )
-                    canvas.drawLine(
-                        x - dp(5).toFloat(), torsoBottom,
-                        x + dp(10).toFloat(), y + dp(58).toFloat(), p
-                    )
-                    canvas.drawLine(
-                        x + dp(5).toFloat(), torsoBottom,
-                        x + dp(26).toFloat(), y + dp(58).toFloat(), p
-                    )
-                }
-
-                else -> {
-                    // Victory pose with raised arms.
-                    p.color = Color.rgb(220, 230, 240)
-                    canvas.drawLine(
-                        x - dp(6).toFloat(), y + dp(22).toFloat(),
-                        x - dp(18).toFloat(), y + dp(7).toFloat(), p
-                    )
-                    canvas.drawLine(
-                        x + dp(6).toFloat(), y + dp(22).toFloat(),
-                        x + dp(18).toFloat(), y + dp(7).toFloat(), p
-                    )
-                    canvas.drawLine(
-                        x - dp(5).toFloat(), torsoBottom,
-                        x - dp(12).toFloat(), y + dp(65).toFloat(), p
-                    )
-                    canvas.drawLine(
-                        x + dp(5).toFloat(), torsoBottom,
-                        x + dp(12).toFloat(), y + dp(65).toFloat(), p
-                    )
-                }
-            }
-
-            // Emote bubble.
-            val bubbleX = x + dp(25)
-            val bubbleY = y - dp(13)
-
-            p.color = Color.argb(235, 5, 15, 32)
-            canvas.drawRoundRect(
-                RectF(
-                    bubbleX - dp(4),
-                    bubbleY - dp(12),
-                    bubbleX + dp(48),
-                    bubbleY + dp(12)
-                ),
-                dp(7).toFloat(), dp(7).toFloat(), p
-            )
-
-            p.color = neon
-            p.textSize = dp(8).toFloat()
-            p.typeface = Typeface.create("sans-serif", Typeface.BOLD)
-            canvas.drawText(emoteNames[emoteIndex], bubbleX, bubbleY + dp(3).toFloat(), p)
-        }
-
-        override fun onTouchEvent(event: MotionEvent): Boolean {
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    dragX = event.x
-                    return true
-                }
-
-                MotionEvent.ACTION_MOVE -> {
-                    val delta = event.x - dragX
-                    rotation = (rotation + delta * 0.7f) % 360f
-                    dragX = event.x
-                    invalidate()
-                    return true
-                }
-
-                MotionEvent.ACTION_UP -> {
-                    performClick()
-                    return true
-                }
-
-                MotionEvent.ACTION_CANCEL -> return true
-            }
-
-            return true
-        }
-
-        override fun performClick(): Boolean {
-            super.performClick()
-            return true
+            paint.color = Color.rgb(110, 65, 45)
+            canvas.drawLine(w * 0.5f, roadTop, w * 0.42f, h, paint)
+            canvas.drawLine(w * 0.5f, roadTop, w * 0.58f, h, paint)
         }
     }
 }
