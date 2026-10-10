@@ -1,12 +1,15 @@
+
 package com.speedracersedge.game
 
 import android.content.Context
 import android.graphics.Color
 import android.view.Choreographer
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.SurfaceView
 import android.widget.FrameLayout
 import android.widget.TextView
+import com.google.android.filament.Skybox
 import com.google.android.filament.utils.ModelViewer
 import java.nio.ByteBuffer
 
@@ -31,6 +34,7 @@ class ModelPreviewView(
         textSize = 14f
         setTextColor(Color.WHITE)
         gravity = Gravity.CENTER
+        setPadding(24, 24, 24, 24)
         setBackgroundColor(Color.rgb(8, 14, 27))
     }
 
@@ -53,13 +57,13 @@ class ModelPreviewView(
             )
         )
 
-        surfaceView.setOnTouchListener { _, event ->
-            modelViewer?.onTouchEvent(event) ?: false
+        // ModelViewer.onTouchEvent does not return a Boolean.
+        // Return true from the listener to indicate that the touch
+        // event was handled.
+        surfaceView.setOnTouchListener { _, event: MotionEvent ->
+            modelViewer?.onTouchEvent(event)
+            true
         }
-    }
-
-    private fun dp(value: Int): Int {
-        return (value * resources.displayMetrics.density).toInt()
     }
 
     private fun initializeViewer() {
@@ -70,28 +74,27 @@ class ModelPreviewView(
             val viewer = ModelViewer(surfaceView)
             modelViewer = viewer
 
-            val bytes = context.assets.open(assetPath).use {
-                it.readBytes()
+            val bytes = context.assets.open(assetPath).use { input ->
+                input.readBytes()
             }
 
             if (bytes.isEmpty()) {
-                throw IllegalStateException("The model file is empty.")
+                throw IllegalStateException(
+                    "The GLB model file is empty."
+                )
             }
 
-            val buffer = ByteBuffer.allocateDirect(bytes.size)
-                .apply {
-                    put(bytes)
-                    flip()
-                }
+            val buffer = ByteBuffer.allocateDirect(bytes.size).apply {
+                put(bytes)
+                flip()
+            }
 
             viewer.loadModelGlb(buffer)
             viewer.transformToUnitCube()
 
-            // Add a simple skybox so the model has a visible background.
-            viewer.scene.skybox =
-                com.google.android.filament.Skybox.Builder()
-                    .color(0.025f, 0.045f, 0.085f, 1.0f)
-                    .build(viewer.engine)
+            viewer.scene.skybox = Skybox.Builder()
+                .color(0.025f, 0.045f, 0.085f, 1.0f)
+                .build(viewer.engine)
 
             statusText.visibility = GONE
 
@@ -99,16 +102,19 @@ class ModelPreviewView(
                 startRendering()
             }
         } catch (error: Exception) {
+            modelViewer = null
             statusText.visibility = VISIBLE
-            statusText.text =
-                "Could not load 3D model\n\n" +
-                "$assetPath\n\n" +
-                (error.message ?: "Unknown error")
+            statusText.text = buildString {
+                append("Could not load 3D model\n\n")
+                append(assetPath)
+                append("\n\n")
+                append(error.message ?: "Unknown error")
+            }
         }
     }
 
     private fun startRendering() {
-        if (frameLoopRunning) return
+        if (frameLoopRunning || modelViewer == null) return
 
         frameLoopRunning = true
         Choreographer.getInstance().postFrameCallback(this)
@@ -128,12 +134,14 @@ class ModelPreviewView(
             stopRendering()
             statusText.visibility = VISIBLE
             statusText.text =
-                "3D rendering error\n" +
+                "3D rendering error\n\n" +
                 (error.message ?: "Unknown error")
             return
         }
 
-        Choreographer.getInstance().postFrameCallback(this)
+        if (frameLoopRunning) {
+            Choreographer.getInstance().postFrameCallback(this)
+        }
     }
 
     override fun onAttachedToWindow() {
